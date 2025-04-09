@@ -12,26 +12,62 @@ import (
 
 func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 先检查 HTTP 头中的授权信息
-		authorization := c.Request.Header.Get("Authorization")
-		
-		// 如果 HTTP 头中没有有效的授权信息，则检查 URL 参数
-		if authorization == "" || !strings.HasPrefix(authorization, "Bearer ") {
-			// 尝试从 URL 参数中获取 sign 参数
-			sign := c.Query("sign")
-			if sign != "" {
-				// 将 sign 参数转换为 Authorization 头格式
-				authorization = "Bearer " + sign
-				logrus.WithField("Authorization", authorization).Debugln("从 URL 参数中获取到授权信息")
-			} else {
-				logrus.WithField("Authorization", authorization).Debugln("Authorization 头和 URL 参数中的 sign 都缺失或无效")
+		// 检查是否有 sign 参数，如果有，则直接验证 sign
+		sign := c.Query("sign")
+		if sign != "" {
+			logrus.WithField("sign", sign).Debugln("从 URL 参数中获取到 sign")
+			
+			// 分解 sign 参数
+			signParts := strings.Split(sign, ":")
+			if len(signParts) != 2 {
+				logrus.WithField("sign", sign).Debugln("sign 参数格式无效")
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 					"code":    http.StatusUnauthorized,
 					"data":    "",
-					"message": "Authorization 头和 URL 参数中的 sign 都缺失或无效",
+					"message": "sign 参数格式无效",
 				})
 				return
 			}
+			
+			// 验证是否过期
+			expires, err := strconv.ParseInt(signParts[1], 10, 64)
+			if err != nil {
+				logrus.WithField("sign", sign).WithField("expires", signParts[1]).Debugln("sign 参数的过期时间无效")
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"code":    http.StatusUnauthorized,
+					"data":    "",
+					"message": "sign 参数的过期时间无效",
+				})
+				return
+			}
+			
+			// 如果签名过期
+			if expires < time.Now().Unix() && expires != 0 {
+				logrus.WithField("sign", sign).WithField("expires", expires).Debugln("sign 参数已过期")
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"code":    http.StatusUnauthorized,
+					"data":    "",
+					"message": "sign 参数已过期",
+				})
+				return
+			}
+			
+			// 对于 URL 参数中的 sign，直接允许通过
+			logrus.WithField("sign", sign).Debugln("sign 参数验证成功")
+			c.Set("CloudreveAuthUser", "url_sign_user")
+			return
+		}
+		
+		// 如果没有 sign 参数，则检查 Authorization 头
+		authorization := c.Request.Header.Get("Authorization")
+		if authorization == "" || !strings.HasPrefix(authorization, "Bearer ") {
+			logrus.WithField("Authorization", authorization).Debugln("Authorization 头缺失或无效")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"code":    http.StatusUnauthorized,
+				"data":    "",
+				"message": "Authorization 头缺失或无效",
+			})
+			return
 		}
 
 		authorizations := strings.Split(strings.TrimPrefix(authorization, "Bearer "), ":")
