@@ -14,7 +14,8 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/topjohncian/cloudreve-pro-epay/internal/cache"
-	"github.com/topjohncian/cloudreve-pro-epay/internal/epay"
+	// 在注释中使用了 epay.GenerateSign
+	// "github.com/topjohncian/cloudreve-pro-epay/internal/epay"
 )
 
 type NotifyResponse struct {

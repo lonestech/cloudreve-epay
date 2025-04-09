@@ -43,7 +43,7 @@ func (pc *CloudrevePayController) CloudreveV4Callback(c *gin.Context) {
 	}
 
 	// 类型断言
-	order, ok := request.(*PurchaseRequest)
+	_, ok = request.(*PurchaseRequest)
 	if !ok {
 		logrus.WithField("order_no", orderNo).Debugln("订单信息非法")
 		c.JSON(http.StatusOK, gin.H{
