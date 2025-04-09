@@ -1,139 +1,144 @@
 # Cloudreve 易支付网关
 
-适配 Cloudreve Pro 的易支付网关，支持支付宝、微信支付等多种支付方式，提供美观的支付界面和灵活的配置选项。
+## 项目介绍
 
-## ✨ 特性
+这是一个为 Cloudreve Pro 设计的易支付网关集成项目，允许 Cloudreve Pro 用户通过易支付接口处理支付请求。本项目完全实现了 Cloudreve Pro 自定义支付接口规范，包括订单创建、支付通知和订单状态查询功能。
 
-- 🎨 美观的支付界面，支持自定义模板
-- 🔄 支持支付宝、微信支付等多种支付方式
-- 📱 完美适配移动端和桌面端
-- 🔒 安全的支付流程，支持 Redis 持久化
-- ⚡ 简单易用的配置系统
+## 功能特性
 
-## 📋 系统要求
+- ✅ 完整支持 Cloudreve Pro 自定义支付接口规范
+- ✅ 支持订单创建、支付通知和订单状态查询
+- ✅ 支持多种支付方式（支付宝、微信支付等）
+- ✅ 安全的 HMAC 签名验证机制
+- ✅ 支持 Redis 缓存，确保支付状态可靠存储
+- ✅ 自定义订单名称
+- ✅ 支持模板导出，避免 XSS 风险
 
-- Cloudreve Pro 3.7.1 及以上版本
-- 建议使用 Redis 持久化支付数据
+## 系统要求
 
-## 📍 快速开始
+- Cloudreve Pro 3.7.1 或更高版本
+- Go 1.18 或更高版本（如果从源码构建）
+- Redis（强烈推荐，但非必须）
 
-### 方式一：直接运行
+## 快速开始
+
+### 部署方法
+
+1. 从 Releases 下载对应系统和架构的二进制可执行文件
+2. 复制 `.env.example` 到 `.env`
+3. 根据下方配置说明修改 `.env` 文件
+4. 启动程序
 
 ```bash
-# 1. 下载最新版本
-从 Releases 页面下载对应系统和架构的可执行文件
-
-# 2. 配置环境
-复制 .env.example 到 .env
-根据实际情况修改配置
-
-# 3. 启动服务
+# 直接运行
 ./cloudreve-epay
+
+# 或者使用 systemd 管理（推荐生产环境）
+sudo cp cloudreve-epay.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now cloudreve-epay
 ```
 
-### 方式二：Docker 部署
-
-本项目提供了 Docker Compose 配置，可以一键部署支付服务和 Redis：
-
-1. 准备配置文件
-```bash
-# 复制示例配置
-cp .env.example .env
-
-# 修改必要的配置项
-CR_EPAY_BASE=https://payment.example.com        # 站点外部访问 URL
-CR_EPAY_CLOUDREVE_KEY=your-secret-key          # Cloudreve 通信密钥
-CR_EPAY_EPAY_PARTNER_ID=your-partner-id        # 易支付商户 ID
-CR_EPAY_EPAY_KEY=your-epay-key                 # 易支付商户密钥
-CR_EPAY_EPAY_ENDPOINT=https://pay.example.com   # 易支付接口地址
-```
-
-2. 启动服务
-```bash
-# 构建并启动服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f
-```
-
-3. 服务说明
-- 支付服务：
-  - 端口：4560
-  - 自动重启：是
-  - 环境变量：从 .env 文件加载
-- Redis 服务：
-  - 持久化：启用 AOF
-  - 数据目录：使用 Docker volume
-  - 网络：仅内部访问
-
-### 2. 配置参数
+### 配置说明
 
 ```env
-# 基本配置
-CR_EPAY_DEBUG=false                            # 是否启用调试模式
-CR_EPAY_LISTEN=:4560                           # 监听端口
-CR_EPAY_BASE=https://payment.example.com        # 站点外部访问 URL
-CR_EPAY_CLOUDREVE_KEY=your-secret-key          # Cloudreve 通信密钥
+# 是否启用 debug 模式（生产环境建议设为 false）
+CR_EPAY_DEBUG=false
 
-# 易支付配置
-CR_EPAY_EPAY_PARTNER_ID=1010                   # 商户 ID
-CR_EPAY_EPAY_KEY=your-epay-key                 # 商户密钥
-CR_EPAY_EPAY_ENDPOINT=https://pay.example.com   # 易支付网关
-CR_EPAY_EPAY_PURCHASE_TYPE=alipay              # 默认支付方式
+# 监听地址和端口（TLS 请使用其他服务器进行反代）
+CR_EPAY_LISTEN=:4560
 
-# Redis 配置
-CR_EPAY_REDIS_ENABLED=true                     # 强烈建议启用
+# 通信密钥（与 Cloudreve 后台设置相同）
+# 建议使用随机生成的 UUID: https://www.uuidgenerator.net/
+CR_EPAY_CLOUDREVE_KEY=your_secure_communication_key
+
+# 本站点的外部访问 URL（必须是外部可访问的地址）
+CR_EPAY_BASE=https://payment.example.com
+
+# 自定义订单名称（可选）
+# CR_EPAY_CUSTOM_NAME=我的商店
+
+# 易支付商家 ID
+CR_EPAY_EPAY_PARTNER_ID=1010
+
+# 易支付商家密钥
+CR_EPAY_EPAY_KEY=your_epay_secret_key
+
+# 易支付网关地址
+CR_EPAY_EPAY_ENDPOINT=https://payment.example.com/submit.php
+
+# 支付方式: wxpay（微信支付）或 alipay（支付宝）
+CR_EPAY_EPAY_PURCHASE_TYPE=alipay
+
+# Redis 配置（强烈推荐启用）
+CR_EPAY_REDIS_ENABLED=true
 CR_EPAY_REDIS_SERVER=localhost:6379
-CR_EPAY_REDIS_PASSWORD=
+# CR_EPAY_REDIS_PASSWORD=your_redis_password
 CR_EPAY_REDIS_DB=0
-
-# 界面配置
-CR_EPAY_CUSTOM_NAME=                           # 自定义商品名称
-CR_EPAY_PAYMENT_TEMPLATE=payment_template.html  # 支付页面模板
-CR_EPAY_AUTO_SUBMIT=true                       # 是否自动跳转
 ```
 
-## 🔧 Cloudreve 配置
+### Cloudreve 设置
 
-1. 进入 Cloudreve 后台
-2. 进入 `参数设置` > `增值服务`
+1. 登录 Cloudreve Pro 后台
+2. 进入 `参数设置` -> `增值服务`
 3. 开启 `自定义付款渠道`
-4. 配置以下项目：
-   - 付款方式名称：自定义
-   - 通讯密钥：与 `CR_EPAY_CLOUDREVE_KEY` 保持一致
-   - 支付接口地址：`CR_EPAY_BASE` + `/cloudreve/purchase`
+4. 填写以下信息：
+   - `付款方式名称`：自定义名称，如"易支付"
+   - `通讯密钥`：与 `.env` 文件中 `CR_EPAY_CLOUDREVE_KEY` 的值相同
+   - `支付接口地址`：`CR_EPAY_BASE` 的值 + `/cloudreve/purchase`（例如：`https://payment.example.com/cloudreve/purchase`）
 5. 保存设置
 
-## 🎨 自定义支付界面
+## 注意事项
 
-### 模板变量
+1. **版本兼容性**：确保使用 Cloudreve Pro 3.7.1 或更高版本
+2. **Redis 缓存**：强烈建议启用 Redis，否则使用内存缓存时，程序重启将导致支付状态丢失
+3. **安全配置**：确保 `CR_EPAY_CLOUDREVE_KEY` 使用强密码，并保持其私密性
+4. **模板导出**：使用 `-eject` 参数导出模板，避免 XSS 风险
+5. **支付方式**：通过 `CR_EPAY_EPAY_PURCHASE_TYPE` 设置默认支付方式，建议选择有自己收银台的易支付服务
 
-| 变量 | 说明 |
-|---------|--------|
-| `{{.Name}}` | 商品名称 |
-| `{{.OrderNo}}` | 订单号 |
-| `{{.Money}}` | 支付金额 |
-| `{{.PayType}}` | 支付方式 |
-| `{{.Endpoint}}` | 支付网关 |
-| `{{.Params}}` | 支付参数 |
-| `{{.AutoSubmit}}` | 自动提交 |
+## 开发指南
 
-### 使用方式
+### 从源码构建
 
-1. 直接修改默认模板 `payment_template.html`
-2. 或创建新模板并配置 `CR_EPAY_PAYMENT_TEMPLATE`
+```bash
+# 克隆仓库
+git clone https://github.com/topjohncian/cloudreve-epay.git
+cd cloudreve-epay
 
-## 📈 更新日志
+# 安装依赖
+go mod tidy
 
-### v0.3.0
+# 构建
+go build -o cloudreve-epay
+```
 
-- ✨ 新增美观的支付界面
-- 🎨 支持自定义模板
-- 🔄 支持自动/手动跳转支付
-- 📱 优化移动端体验
+### API 文档
 
-### v0.2.0
+本项目实现了 Cloudreve Pro 自定义支付接口规范，详细 API 文档请参考 [custom.md](custom.md)。
 
-- ✅ 支持多种支付方式
-- ✨ 支持自定义商品名称
+## 更新日志
+
+### 0.3 (2025-04-09)
+
+- 实现订单状态查询功能
+- 优化缓存机制，提高支付状态可靠性
+- 改进 HMAC 签名验证机制
+- 更新依赖库，提高安全性
+
+### 0.2
+
+- 修复易支付自定义付款方式，添加 `CR_EPAY_EPAY_PURCHASE_TYPE` 配置
+- 支持自定义商品名称
+
+### 0.1
+
+- 初始版本发布
+- 实现基本的易支付集成功能
+
+## 贡献指南
+
+欢迎提交 Issues 和 Pull Requests 来帮助改进这个项目！
+
+## 许可证
+
+本项目采用 MIT 许可证。

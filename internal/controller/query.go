@@ -5,64 +5,65 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"github.com/topjohncian/cloudreve-pro-epay/internal/epay"
+	"github.com/topjohncian/cloudreve-pro-epay/internal/cache"
 )
 
-type OrderQueryResponse struct {
-	Code    int    `json:"code"`
-	Data    string `json:"data"`
-	Message string `json:"message"`
+type QueryOrderStatusResponse struct {
+	Code  int    `json:"code"`
+	Data  string `json:"data,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
-// QueryOrder 查询订单状态
-func (pc *CloudrevePayController) QueryOrder(c *gin.Context) {
+// QueryOrderStatus handles the GET request to check the payment status of an order
+// This implements the specification from custom.md
+func (pc *CloudrevePayController) QueryOrderStatus(c *gin.Context) {
 	orderNo := c.Query("order_no")
 	if orderNo == "" {
 		logrus.Debugln("无效的订单号")
-		c.AbortWithStatusJSON(http.StatusBadRequest, OrderQueryResponse{
-			Code:    http.StatusBadRequest,
-			Message: "无效的订单号",
+		c.JSON(http.StatusOK, QueryOrderStatusResponse{
+			Code:  500,
+			Error: "Invalid order number",
 		})
 		return
 	}
 
-	// 获取订单信息
-	request, ok := pc.Cache.Get(PurchaseSessionPrefix + orderNo)
+	// Check if the order is marked as paid first
+	if cache.IsOrderPaid(pc.Cache, orderNo) {
+		c.JSON(http.StatusOK, QueryOrderStatusResponse{
+			Code: 0,
+			Data: "PAID",
+		})
+		return
+	}
+
+	// Try to get the order from cache
+	req, ok := pc.Cache.Get(PurchaseSessionPrefix + orderNo)
 	if !ok {
+		// If we can't find it in the cache and it's not marked as paid,
+		// it's either expired or never existed
 		logrus.WithField("order_no", orderNo).Debugln("订单信息不存在")
-		c.AbortWithStatusJSON(http.StatusNotFound, OrderQueryResponse{
-			Code:    http.StatusNotFound,
-			Message: "订单信息不存在",
+		c.JSON(http.StatusOK, QueryOrderStatusResponse{
+			Code:  0,
+			Data:  "UNPAID", // Not PAID means unpaid
 		})
 		return
 	}
 
-	purchaseReq := request.(PurchaseRequest)
-
-	// 创建易支付客户端
-	client := epay.NewClient(&epay.Config{
-		PartnerID: pc.Conf.EpayPartnerID,
-		Key:       pc.Conf.EpayKey,
-		Endpoint:  pc.Conf.EpayEndpoint,
-	})
-
-	// 查询订单状态
-	verifyRes, err := client.Verify(map[string]string{
-		"out_trade_no": orderNo,
-	})
-
-	if err != nil {
-		logrus.WithField("order_no", orderNo).WithError(err).Errorln("查询订单状态失败")
-		c.AbortWithStatusJSON(http.StatusInternalServerError, OrderQueryResponse{
-			Code:    http.StatusInternalServerError,
-			Message: "查询订单状态失败: " + err.Error(),
+	_, ok2 := req.(*PurchaseRequest)
+	if !ok2 {
+		logrus.WithField("order_no", orderNo).Debugln("订单信息非法")
+		c.JSON(http.StatusOK, QueryOrderStatusResponse{
+			Code:  500,
+			Error: "Invalid order information",
 		})
 		return
 	}
 
-	// 返回订单状态
-	c.JSON(http.StatusOK, OrderQueryResponse{
+	// Check if we have a payment record for this order
+	// For now, we'll just return not paid if it's still in the cache
+	// (meaning it hasn't been processed by the notify handler yet)
+	c.JSON(http.StatusOK, QueryOrderStatusResponse{
 		Code: 0,
-		Data: verifyRes.TradeStatus,
+		Data: "UNPAID", // Not PAID means unpaid
 	})
 }

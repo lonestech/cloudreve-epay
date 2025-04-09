@@ -18,10 +18,10 @@ type CloudrevePayController struct {
 
 func RegisterControllers(c CloudrevePayController, r *gin.Engine) {
 	r.POST("/cloudreve/purchase", c.BearerAuthMiddleware(), c.Purchase)
+	r.GET("/cloudreve/purchase", c.BearerAuthMiddleware(), c.QueryOrderStatus)
 	r.GET("/purchase/:id", c.PurchasePage)
 	r.GET("/notify/:id", c.Notify)
 	r.GET("/return/:id", c.Return)
-	r.GET("/order", c.BearerAuthMiddleware(), c.QueryOrder)
 }
 
 func Module() fx.Option {

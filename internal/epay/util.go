@@ -40,9 +40,8 @@ func CreateUrlString(keys []string, values []string) string {
 
 // MD5String 生成 加盐(商户 key) MD5 字符串
 func MD5String(urlString string, key string) string {
-	// 新版API签名规则：字符串+商户密钥，取32位小写MD5
 	digest := md5.Sum([]byte(urlString + key))
-	return strings.ToLower(fmt.Sprintf("%x", digest))
+	return fmt.Sprintf("%x", digest)
 }
 
 // GenerateParams 生成加签参数
