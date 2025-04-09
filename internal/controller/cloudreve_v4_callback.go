@@ -35,15 +35,7 @@ func (pc *CloudrevePayController) CloudreveV4Callback(c *gin.Context) {
 	request, ok := pc.Cache.Get(PurchaseSessionPrefix + orderNo)
 	if !ok {
 		// 检查订单是否已经支付
-		paid, err := cache.IsOrderPaid(pc.Cache, orderNo)
-		if err != nil {
-			logrus.WithField("order_no", orderNo).WithError(err).Debugln("检查订单支付状态失败")
-			c.JSON(http.StatusOK, gin.H{
-				"code":  500,
-				"error": "检查订单支付状态失败",
-			})
-			return
-		}
+		paid := cache.IsOrderPaid(pc.Cache, orderNo)
 		
 		if paid {
 			// 订单已经支付，返回成功响应
