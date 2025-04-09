@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/avast/retry-go"
 	"github.com/gin-gonic/gin"
@@ -69,7 +70,21 @@ func (pc *CloudrevePayController) Notify(c *gin.Context) {
 
 		err = retry.Do(func() error {
 			var notifyRes NotifyResponse
-			resp, err := pc.Client.R().SetSuccessResult(&notifyRes).Get(order.NotifyUrl)
+
+			// 生成 HMAC 签名用于授权
+			auth := &HMAC{
+				CloudreveKey: []byte(pc.Conf.CloudreveKey),
+			}
+			// 生成带有过期时间的签名（10分钟后过期）
+			expires := time.Now().Add(10 * time.Minute).Unix()
+			signature := auth.Sign(order.NotifyUrl, expires)
+
+			// 添加 Authorization 头
+			resp, err := pc.Client.R().
+				SetSuccessResult(&notifyRes).
+				SetHeader("Authorization", signature+":"+strconv.FormatInt(expires, 10)).
+				Get(order.NotifyUrl)
+
 			if err != nil {
 				logrus.WithField("id", orderId).WithError(err).Errorln("通知失败")
 				return err
