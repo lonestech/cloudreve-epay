@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /build
 
@@ -29,6 +29,10 @@ COPY --from=builder /build/templates /app/templates
 # 创建配置目录
 RUN mkdir -p /app/custom
 
+# 复制环境变量文件（如果存在）
+COPY .env* /app/
+
 EXPOSE 4560
 
-CMD ["./epay"]
+# 添加启动命令
+CMD ["/app/epay"]

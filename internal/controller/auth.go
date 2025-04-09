@@ -12,15 +12,26 @@ import (
 
 func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 先检查 HTTP 头中的授权信息
 		authorization := c.Request.Header.Get("Authorization")
+		
+		// 如果 HTTP 头中没有有效的授权信息，则检查 URL 参数
 		if authorization == "" || !strings.HasPrefix(authorization, "Bearer ") {
-			logrus.WithField("Authorization", authorization).Debugln("Authorization 头缺失或无效")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"code":    http.StatusUnauthorized,
-				"data":    "",
-				"message": "Authorization 头缺失或无效",
-			})
-			return
+			// 尝试从 URL 参数中获取 sign 参数
+			sign := c.Query("sign")
+			if sign != "" {
+				// 将 sign 参数转换为 Authorization 头格式
+				authorization = "Bearer " + sign
+				logrus.WithField("Authorization", authorization).Debugln("从 URL 参数中获取到授权信息")
+			} else {
+				logrus.WithField("Authorization", authorization).Debugln("Authorization 头和 URL 参数中的 sign 都缺失或无效")
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"code":    http.StatusUnauthorized,
+					"data":    "",
+					"message": "Authorization 头和 URL 参数中的 sign 都缺失或无效",
+				})
+				return
+			}
 		}
 
 		authorizations := strings.Split(strings.TrimPrefix(authorization, "Bearer "), ":")
