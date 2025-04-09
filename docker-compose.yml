@@ -10,18 +10,19 @@ services:
     environment:
       - CR_EPAY_DEBUG=false
       - CR_EPAY_LISTEN=:4560
-      - CR_EPAY_BASE=${CR_EPAY_BASE}
-      - CR_EPAY_CLOUDREVE_KEY=${CR_EPAY_CLOUDREVE_KEY}
-      - CR_EPAY_EPAY_PARTNER_ID=${CR_EPAY_EPAY_PARTNER_ID}
-      - CR_EPAY_EPAY_KEY=${CR_EPAY_EPAY_KEY}
-      - CR_EPAY_EPAY_ENDPOINT=${CR_EPAY_EPAY_ENDPOINT}
-      - CR_EPAY_EPAY_PURCHASE_TYPE=${CR_EPAY_EPAY_PURCHASE_TYPE:-alipay}
+      # 直接定义环境变量，而不是使用 .env 文件
+      - CR_EPAY_BASE=http://localhost:4560
+      - CR_EPAY_CLOUDREVE_KEY=your_cloudreve_key_here
+      - CR_EPAY_EPAY_PARTNER_ID=your_partner_id_here
+      - CR_EPAY_EPAY_KEY=your_epay_key_here
+      - CR_EPAY_EPAY_ENDPOINT=https://your-epay-endpoint.com/submit.php
+      - CR_EPAY_EPAY_PURCHASE_TYPE=alipay
       - CR_EPAY_REDIS_ENABLED=true
       - CR_EPAY_REDIS_SERVER=redis:6379
-      - CR_EPAY_REDIS_PASSWORD=${CR_EPAY_REDIS_PASSWORD:-}
-      - CR_EPAY_REDIS_DB=${CR_EPAY_REDIS_DB:-0}
-      - CR_EPAY_PAYMENT_TEMPLATE=${CR_EPAY_PAYMENT_TEMPLATE:-payment_template.html}
-      - CR_EPAY_AUTO_SUBMIT=${CR_EPAY_AUTO_SUBMIT:-true}
+      - CR_EPAY_REDIS_PASSWORD=
+      - CR_EPAY_REDIS_DB=0
+      - CR_EPAY_PAYMENT_TEMPLATE=payment_template.html
+      - CR_EPAY_AUTO_SUBMIT=true
     depends_on:
       - redis
     restart: unless-stopped

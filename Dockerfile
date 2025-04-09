@@ -29,8 +29,7 @@ COPY --from=builder /build/templates /app/templates
 # 创建配置目录
 RUN mkdir -p /app/custom
 
-# 复制环境变量文件（如果存在）
-COPY .env* /app/
+# 环境变量已在 docker-compose.yml 中定义，不需要复制 .env 文件
 
 EXPOSE 4560
 

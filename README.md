@@ -13,16 +13,20 @@
 - ✅ 支持 Redis 缓存，确保支付状态可靠存储
 - ✅ 自定义订单名称
 - ✅ 支持模板导出，避免 XSS 风险
+- ✅ 支持 Cloudreve V4 回调格式
 
 ## 系统要求
 
 - Cloudreve Pro 3.7.1 或更高版本
 - Go 1.18 或更高版本（如果从源码构建）
-- Redis（强烈推荐，但非必须）
+- Redis（强烈推荐，但非必须，只测试了开启的情况）
+- Docker（可选，用于容器化部署）
 
 ## 快速开始
 
 ### 部署方法
+
+#### 方法一：二进制文件部署
 
 1. 从 Releases 下载对应系统和架构的二进制可执行文件
 2. 复制 `.env.example` 到 `.env`
@@ -39,7 +43,51 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now cloudreve-epay
 ```
 
+#### 方法二：Docker 容器部署（推荐）
+
+1. 克隆仓库或下载源码
+
+```bash
+git clone https://github.com/topjohncian/cloudreve-epay.git
+cd cloudreve-epay
+```
+
+2. 修改 `docker-compose.yml` 文件中的环境变量
+
+```yaml
+environment:
+  - CR_EPAY_DEBUG=false
+  - CR_EPAY_LISTEN=:4560
+  # 下面的变量需要根据实际情况修改
+  - CR_EPAY_BASE=http://your-domain.com
+  - CR_EPAY_CLOUDREVE_KEY=your_cloudreve_key_here
+  - CR_EPAY_EPAY_PARTNER_ID=your_partner_id_here
+  - CR_EPAY_EPAY_KEY=your_epay_key_here
+  - CR_EPAY_EPAY_ENDPOINT=https://your-epay-endpoint.com/submit.php
+  - CR_EPAY_EPAY_PURCHASE_TYPE=alipay
+  # Redis 配置
+  - CR_EPAY_REDIS_ENABLED=true
+  - CR_EPAY_REDIS_SERVER=redis:6379
+  - CR_EPAY_REDIS_PASSWORD=
+  - CR_EPAY_REDIS_DB=0
+  - CR_EPAY_PAYMENT_TEMPLATE=payment_template.html
+  - CR_EPAY_AUTO_SUBMIT=true
+```
+
+3. 构建并启动容器
+
+```bash
+docker-compose build
+docker-compose up -d
+```
+
+注意：使用 Docker 部署时，不需要创建 `.env` 文件，所有配置都在 `docker-compose.yml` 文件中定义。
+
 ### 配置说明
+
+配置参数可以通过环境变量或 `.env` 文件设置。以下是所有支持的配置项：
+
+#### 二进制部署方式（.env 文件）
 
 ```env
 # 是否启用 debug 模式（生产环境建议设为 false）
@@ -76,6 +124,32 @@ CR_EPAY_REDIS_SERVER=localhost:6379
 # CR_EPAY_REDIS_PASSWORD=your_redis_password
 CR_EPAY_REDIS_DB=0
 ```
+
+#### Docker 部署方式（docker-compose.yml）
+
+在 `docker-compose.yml` 文件中设置环境变量：
+
+```yaml
+environment:
+  - CR_EPAY_DEBUG=false
+  - CR_EPAY_LISTEN=:4560
+  # 下面的变量需要根据实际情况修改
+  - CR_EPAY_BASE=http://your-domain.com
+  - CR_EPAY_CLOUDREVE_KEY=your_cloudreve_key_here
+  - CR_EPAY_EPAY_PARTNER_ID=your_partner_id_here
+  - CR_EPAY_EPAY_KEY=your_epay_key_here
+  - CR_EPAY_EPAY_ENDPOINT=https://your-epay-endpoint.com/submit.php
+  - CR_EPAY_EPAY_PURCHASE_TYPE=alipay
+  # Redis 配置
+  - CR_EPAY_REDIS_ENABLED=true
+  - CR_EPAY_REDIS_SERVER=redis:6379
+  - CR_EPAY_REDIS_PASSWORD=
+  - CR_EPAY_REDIS_DB=0
+  - CR_EPAY_PAYMENT_TEMPLATE=payment_template.html
+  - CR_EPAY_AUTO_SUBMIT=true
+```
+
+注意：使用 Docker 部署时，不需要创建 `.env` 文件，所有配置都在 `docker-compose.yml` 文件中定义。
 
 ### Cloudreve 设置
 
