@@ -72,7 +72,7 @@ func (pc *CloudrevePayController) Notify(c *gin.Context) {
 			var notifyRes NotifyResponse
 
 			// 生成 HMAC 签名用于授权
-			auth := &HMAC{
+			auth := &HMACAuth{
 				CloudreveKey: []byte(pc.Conf.CloudreveKey),
 			}
 			// 生成带有过期时间的签名（10分钟后过期）
