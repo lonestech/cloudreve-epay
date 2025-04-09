@@ -40,7 +40,7 @@ func CreateUrlString(keys []string, values []string) string {
 
 // MD5String 生成 加盐(商户 key) MD5 字符串
 func MD5String(urlString string, key string) string {
-	digest := md5.Sum([]byte(urlString + key))
+	digest := md5.Sum([]byte(urlString + "&key=" + key))
 	return fmt.Sprintf("%x", digest)
 }
 

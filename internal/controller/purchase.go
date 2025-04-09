@@ -21,6 +21,7 @@ type PurchaseRequest struct {
 	OrderNo   string `json:"order_no" binding:"required"`
 	NotifyUrl string `json:"notify_url" binding:"required"`
 	Amount    int    `json:"amount" binding:"required"`
+	Currency  string `json:"currency" binding:"omitempty"`
 }
 
 type PurchaseResponse struct {
@@ -36,20 +37,18 @@ func (pc *CloudrevePayController) Purchase(c *gin.Context) {
 	var req PurchaseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logrus.WithError(err).Debugln("无法解析请求")
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":    http.StatusBadRequest,
-			"data":    "",
-			"message": "无法解析请求" + err.Error(),
+		c.JSON(http.StatusOK, PurchaseResponse{
+			Code: 400,
+			Data: "",
 		})
 		return
 	}
 
 	if err := pc.Cache.Set(PurchaseSessionPrefix+req.OrderNo, req, paymentTTL); err != nil {
 		logrus.WithError(err).Warningln("无法保存订单信息")
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"data":    "",
-			"message": "无法保存订单信息" + err.Error(),
+		c.JSON(http.StatusOK, PurchaseResponse{
+			Code: 500,
+			Data: "",
 		})
 		return
 	}
@@ -58,10 +57,10 @@ func (pc *CloudrevePayController) Purchase(c *gin.Context) {
 	purchaseURL, err := url.Parse("/purchase/" + req.OrderNo)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"data":    "",
-			"message": "无法解析 URL" + err.Error(),
+		logrus.WithError(err).Warningln("无法解析 URL")
+		c.JSON(http.StatusOK, PurchaseResponse{
+			Code: 500,
+			Data: "",
 		})
 		return
 	}
@@ -76,9 +75,7 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 	orderId := c.Param("id")
 	if orderId == "" {
 		logrus.Debugln("无效的订单号")
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":    http.StatusBadRequest,
-			"data":    "",
+		c.HTML(http.StatusOK, "error.tmpl", gin.H{
 			"message": "无效的订单号",
 		})
 		return
@@ -87,9 +84,7 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 	req, ok := pc.Cache.Get(PurchaseSessionPrefix + orderId)
 	if !ok {
 		logrus.WithField("id", orderId).Debugln("订单信息不存在")
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":    http.StatusBadRequest,
-			"data":    "",
+		c.HTML(http.StatusOK, "error.tmpl", gin.H{
 			"message": "订单信息不存在",
 		})
 		return
@@ -98,9 +93,7 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 	order, ok := req.(*PurchaseRequest)
 	if !ok {
 		logrus.WithField("id", orderId).Debugln("订单信息非法")
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"code":    http.StatusBadRequest,
-			"data":    "",
+		c.HTML(http.StatusOK, "error.tmpl", gin.H{
 			"message": "订单信息非法",
 		})
 		return
@@ -111,10 +104,10 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 	returnURL, err := url.Parse("/return/" + order.OrderNo)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"data":    "",
-			"message": "无法解析 URL" + err.Error(),
+		logrus.WithError(err).Warningln("无法解析 URL")
+		c.JSON(http.StatusOK, PurchaseResponse{
+			Code: 500,
+			Data: "",
 		})
 		return
 	}

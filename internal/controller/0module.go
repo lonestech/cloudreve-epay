@@ -22,6 +22,7 @@ func RegisterControllers(c CloudrevePayController, r *gin.Engine) {
 	r.GET("/purchase/:id", c.PurchasePage)
 	r.GET("/notify/:id", c.Notify)
 	r.GET("/return/:id", c.Return)
+	r.GET("/cloudreve/callback", c.Callback)
 }
 
 func Module() fx.Option {

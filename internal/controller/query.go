@@ -14,6 +14,12 @@ type QueryOrderStatusResponse struct {
 	Error string `json:"error,omitempty"`
 }
 
+// 订单状态常量
+const (
+	OrderStatusPaid   = "PAID"    // 已支付
+	OrderStatusUnpaid = "UNPAID"  // 未支付
+)
+
 // QueryOrderStatus handles the GET request to check the payment status of an order
 // This implements the specification from custom.md
 func (pc *CloudrevePayController) QueryOrderStatus(c *gin.Context) {
@@ -31,7 +37,7 @@ func (pc *CloudrevePayController) QueryOrderStatus(c *gin.Context) {
 	if cache.IsOrderPaid(pc.Cache, orderNo) {
 		c.JSON(http.StatusOK, QueryOrderStatusResponse{
 			Code: 0,
-			Data: "PAID",
+			Data: OrderStatusPaid,
 		})
 		return
 	}
@@ -44,7 +50,7 @@ func (pc *CloudrevePayController) QueryOrderStatus(c *gin.Context) {
 		logrus.WithField("order_no", orderNo).Debugln("订单信息不存在")
 		c.JSON(http.StatusOK, QueryOrderStatusResponse{
 			Code:  0,
-			Data:  "UNPAID", // Not PAID means unpaid
+			Data:  OrderStatusUnpaid,
 		})
 		return
 	}
@@ -59,11 +65,9 @@ func (pc *CloudrevePayController) QueryOrderStatus(c *gin.Context) {
 		return
 	}
 
-	// Check if we have a payment record for this order
-	// For now, we'll just return not paid if it's still in the cache
-	// (meaning it hasn't been processed by the notify handler yet)
+	// 如果订单存在于缓存中，但没有被标记为已支付，则返回未支付状态
 	c.JSON(http.StatusOK, QueryOrderStatusResponse{
 		Code: 0,
-		Data: "UNPAID", // Not PAID means unpaid
+		Data: OrderStatusUnpaid,
 	})
 }

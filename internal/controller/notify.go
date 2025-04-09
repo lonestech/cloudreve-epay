@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -18,7 +19,7 @@ import (
 
 type NotifyResponse struct {
 	Code  int    `json:"code"`
-	Error string `json:"eror"`
+	Error string `json:"error"`
 }
 
 func (pc *CloudrevePayController) Notify(c *gin.Context) {
@@ -80,18 +81,22 @@ func (pc *CloudrevePayController) Notify(c *gin.Context) {
 			// 生成带有过期时间的签名（10分钟后过期）
 			expires := time.Now().Add(10 * time.Minute).Unix()
 			
-			// 生成签名内容（路径部分）
+			// 解析通知 URL
 			parsedURL, err := url.Parse(order.NotifyUrl)
 			if err != nil {
 				logrus.WithField("id", orderId).WithError(err).Errorln("解析 URL 失败")
 				return err
 			}
 			
-			// 使用路径作为签名内容
-			signContent := parsedURL.Path
-			if parsedURL.RawQuery != "" {
-				signContent += "?" + parsedURL.RawQuery
+			// 生成签名内容
+			// 使用与服务器相同的方式生成签名内容
+			req := RequestRawSign{
+				Path:   parsedURL.Path,
+				Header: "",
+				Body:   "", // 通知请求没有请求体
 			}
+			signContentBytes, _ := json.Marshal(req)
+			signContent := string(signContentBytes)
 			
 			// 生成签名
 			signature := auth.Sign(signContent, expires)
@@ -100,7 +105,8 @@ func (pc *CloudrevePayController) Notify(c *gin.Context) {
 			authHeader := "Bearer " + signature
 			logrus.WithField("id", orderId).WithField("Authorization", authHeader).Debugln("生成的 Authorization 头")
 			
-			// 发送请求
+			// 发送 GET 请求
+			// 根据文档要求，回调通知应该使用 GET 请求
 			resp, err := pc.Client.R().
 				SetSuccessResult(&notifyRes).
 				SetHeader("Authorization", authHeader).
@@ -141,6 +147,7 @@ func (pc *CloudrevePayController) Notify(c *gin.Context) {
 			logrus.WithField("id", orderId).WithError(err).Errorln("标记订单为已支付失败")
 		}
 
+		// 从缓存中删除订单信息
 		pc.Cache.Delete([]string{orderId}, PurchaseSessionPrefix)
 		return
 	}
