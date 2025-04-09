@@ -23,6 +23,10 @@ func RegisterControllers(c CloudrevePayController, r *gin.Engine) {
 	r.GET("/notify/:id", c.Notify)
 	r.GET("/return/:id", c.Return)
 	r.GET("/cloudreve/callback", c.Callback)
+	
+	// 添加 Cloudreve V4 版本的回调路由
+	r.GET("/api/v4/callback/custom/:id", c.CloudreveV4Callback)
+	r.POST("/api/v4/callback/custom/:id", c.CloudreveV4Callback)
 }
 
 func Module() fx.Option {

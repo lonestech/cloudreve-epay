@@ -100,7 +100,8 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 	}
 
 	baseURL, _ := url.Parse(pc.Conf.Base)
-	purchaseURL, _ := url.Parse("/notify/" + order.OrderNo)
+	// 修改为 Cloudreve V4 格式的回调地址
+	purchaseURL, _ := url.Parse("/api/v4/callback/custom/" + order.OrderNo)
 	returnURL, err := url.Parse("/return/" + order.OrderNo)
 
 	if err != nil {
