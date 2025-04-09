@@ -30,6 +30,6 @@ jobs:
     - name: Setup Goreleaser
       uses: goreleaser/goreleaser-action@v4
       with:
-        args: release --clean --skip-validate
+        args: release --clean 
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
