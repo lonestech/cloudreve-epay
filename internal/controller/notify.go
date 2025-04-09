@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -75,14 +76,34 @@ func (pc *CloudrevePayController) Notify(c *gin.Context) {
 			auth := &HMACAuth{
 				CloudreveKey: []byte(pc.Conf.CloudreveKey),
 			}
+			
 			// 生成带有过期时间的签名（10分钟后过期）
 			expires := time.Now().Add(10 * time.Minute).Unix()
-			signature := auth.Sign(order.NotifyUrl, expires)
-
-			// 添加 Authorization 头
+			
+			// 生成签名内容（路径部分）
+			parsedURL, err := url.Parse(order.NotifyUrl)
+			if err != nil {
+				logrus.WithField("id", orderId).WithError(err).Errorln("解析 URL 失败")
+				return err
+			}
+			
+			// 使用路径作为签名内容
+			signContent := parsedURL.Path
+			if parsedURL.RawQuery != "" {
+				signContent += "?" + parsedURL.RawQuery
+			}
+			
+			// 生成签名
+			signature := auth.Sign(signContent, expires)
+			
+			// 生成 Authorization 头
+			authHeader := "Bearer " + signature
+			logrus.WithField("id", orderId).WithField("Authorization", authHeader).Debugln("生成的 Authorization 头")
+			
+			// 发送请求
 			resp, err := pc.Client.R().
 				SetSuccessResult(&notifyRes).
-				SetHeader("Authorization", signature+":"+strconv.FormatInt(expires, 10)).
+				SetHeader("Authorization", authHeader).
 				Get(order.NotifyUrl)
 
 			if err != nil {
