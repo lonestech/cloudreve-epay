@@ -62,8 +62,29 @@ func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 			CloudreveKey: []byte(pc.Conf.CloudreveKey),
 		}
 
-		if generatedSign := auth.Sign(getSignContent(c.Request), expires); signature != generatedSign {
-			logrus.WithField("Authorization", authorization).WithField("generatedSign", generatedSign).Debugln("Authorization 头无效，签名不匹配")
+		// 获取待签名内容
+		signContent := getSignContent(c.Request)
+		
+		// 生成签名
+		generatedSign := auth.Sign(signContent, expires)
+		
+		// 检查签名是否匹配
+		// 修复可能的前缀问题
+		signatureTrimmed := signature
+		// 如果签名中包含额外的前缀（如 "Cr "），尝试去除
+		if parts := strings.Split(signature, " "); len(parts) > 1 {
+			// 取最后一部分作为实际签名
+			signatureTrimmed = parts[len(parts)-1]
+		}
+		
+		if signatureTrimmed != generatedSign {
+			logrus.WithFields(logrus.Fields{
+				"Authorization": authorization,
+				"signature": signature,
+				"signatureTrimmed": signatureTrimmed,
+				"generatedSign": generatedSign,
+				"signContent": signContent,
+			}).Debugln("Authorization 头无效，签名不匹配")
 
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code":    http.StatusUnauthorized,
