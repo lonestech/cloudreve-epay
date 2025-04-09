@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支付确认 - {{.Name}}</title>
+    <style>
+        :root {
+            --primary-color: #7E22CE;
+            --text-color: #1c1e21;
+            --background-color: #f5f6f7;
+            --border-color: #d4d9e1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .payment-details {
+            margin-bottom: 2rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #666;
+        }
+
+        .detail-value {
+            font-weight: 500;
+        }
+
+        .amount {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .payment-methods {
+            margin-bottom: 2rem;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .payment-method:hover {
+            border-color: var(--primary-color);
+        }
+
+        .payment-method.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(126, 34, 206, 0.05);
+        }
+
+        .payment-method img {
+            width: 24px;
+            height: 24px;
+            margin-right: 1rem;
+        }
+
+        .submit-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .submit-button:hover {
+            background-color: #6B21A8;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>确认支付</h1>
+        </div>
+
+        <div class="payment-details">
+            <div class="detail-row">
+                <span class="detail-label">商品名称</span>
+                <span class="detail-value">{{.Name}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">订单号</span>
+                <span class="detail-value">{{.OrderNo}}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">支付金额</span>
+                <span class="detail-value amount">¥ {{.Money}}</span>
+            </div>
+        </div>
+
+        <form id="purchase" name="purchase" action="{{.Endpoint}}" method="POST">
+            {{range $key,$value := .Params}}
+                <input type="hidden" name="{{$key}}" value="{{$value}}" />
+            {{end}}
+            
+            <div class="payment-methods">
+                <div class="payment-method {{if eq .PayType "alipay"}}selected{{end}}" onclick="selectPayment('alipay')">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTIyLjIyNiAxMy4zOTJjLTEuMzIuNTU4LTIuNzI5Ljk5LTQuMjI2IDEuMjg3djQuMDk1YzQuMjU1LS4xNyA3LjU1NS0xLjEyNiA3LjU1NS0yLjI5NSAwLTEuMjYzLTMuNzU2LTIuMzM4LTguNTc3LTIuNDU4bC0uMDAxLjAwMWMtLjAyOC0uMDg4LS4wNDYtLjE4LS4wNDYtLjI3NyAwLS40OTcuNDAzLS45LjktLjkuNDk3IDAgLjkuNDAzLjkuOSAwIC4wOTctLjAxOC4xODktLjA0Ni4yNzdsLS4wMDEtLjAwMWMtMS4zMi4wNjItMi41NTMuMjA4LTMuNjc5LjQyN3Y0LjA5NWMxLjQ5Ny0uMjk3IDIuOTA2LS43MjkgNC4yMjYtMS4yODd2LTQuMDk1Yy0xLjMyLjU1OC0yLjcyOS45OS00LjIyNiAxLjI4N3Y0LjA5NWM0LjI1NS0uMTcgNy41NTUtMS4xMjYgNy41NTUtMi4yOTUgMC0xLjI2My0zLjc1Ni0yLjMzOC04LjU3Ny0yLjQ1OGwtLjAwMS4wMDFjLS4wMjgtLjA4OC0uMDQ2LS4xOC0uMDQ2LS4yNzcgMC0uNDk3LjQwMy0uOS45LS45LjQ5NyAwIC45LjQwMy45LjkgMCAuMDk3LS4wMTguMTg5LS4wNDYuMjc3bC0uMDAxLS4wMDFjLTEuMzIuMDYyLTIuNTUzLjIwOC0zLjY3OS40Mjd2NC4wOTVjMS40OTctLjI5NyAyLjkwNi0uNzI5IDQuMjI2LTEuMjg3di00LjA5NXoiIGZpbGw9IiMwMDlmZTkiLz48L3N2Zz4=" alt="支付宝">
+                    <span>支付宝</span>
+                </div>
+                <div class="payment-method {{if eq .PayType "wxpay"}}selected{{end}}" onclick="selectPayment('wxpay')">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTkuMjE1IDEyLjQ0N2MtMS4xMzYgMC0yLjA1OS0uOTIyLTIuMDU5LTIuMDU5czAuOTIyLTIuMDU5IDIuMDU5LTIuMDU5czIuMDU5IDAuOTIyIDIuMDU5IDIuMDU5LTAuOTIyIDIuMDU5LTIuMDU5IDIuMDU5ek0xNC43ODUgMTIuNDQ3Yy0xLjEzNiAwLTIuMDU5LTAuOTIyLTIuMDU5LTIuMDU5czAuOTIyLTIuMDU5IDIuMDU5LTIuMDU5czIuMDU5IDAuOTIyIDIuMDU5IDIuMDU5LTAuOTIyIDIuMDU5LTIuMDU5IDIuMDU5eiIgZmlsbD0iIzA3YzE2MCIvPjxwYXRoIGQ9Ik0yMi41OSAxMi4yMzVjMC0yLjgxNy0yLjMyLTUuMTA1LTUuMTgtNS4xMDVzLTUuMTggMi4yODgtNS4xOCA1LjEwNSAyLjMyIDUuMTA1IDUuMTggNS4xMDUgNS4xOC0yLjI4OCA1LjE4LTUuMTA1ek0xMi40MSAxMi4yMzVjMC0yLjgxNy0yLjMyLTUuMTA1LTUuMTgtNS4xMDVzLTUuMTggMi4yODgtNS4xOCA1LjEwNSAyLjMyIDUuMTA1IDUuMTggNS4xMDUgNS4xOC0yLjI4OCA1LjE4LTUuMTA1eiIgZmlsbD0iIzA3YzE2MCIvPjwvc3ZnPg==" alt="微信支付">
+                    <span>微信支付</span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-button">立即支付</button>
+        </form>
+    </div>
+
+    <script>
+        function selectPayment(type) {
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelector(`.payment-method[data-type="${type}"]`).classList.add('selected');
+            document.querySelector('input[name="type"]').value = type;
+        }
+
+        // 自动提交表单（可选）
+        setTimeout(() => {
+            document.forms['purchase'].submit();
+        }, 100);
+    </script>
+</body>
+</html>

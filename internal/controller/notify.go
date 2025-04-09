@@ -53,13 +53,16 @@ func (pc *CloudrevePayController) Notify(c *gin.Context) {
 	}
 
 	if params["trade_status"] == "TRADE_SUCCESS" {
+		// 将订单金额从分转换为元（除以100）
 		amount := decimal.NewFromInt(int64(order.Amount)).Div(decimal.NewFromInt(100))
+		// 获取支付平台返回的实际支付金额
 		realAmount, err := decimal.NewFromString(params["money"])
 		if err != nil {
 			logrus.WithError(err).WithField("id", orderId).Debugln("无法解析订单金额")
 			c.String(400, "fail")
 			return
 		}
+		// 验证实际支付金额是否与订单金额一致
 		if !realAmount.Equal(amount) {
 			logrus.WithField("id", orderId).Debugln("订单金额不符")
 			c.String(400, "fail")

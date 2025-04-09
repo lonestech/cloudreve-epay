@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  epay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4560:4560"
+    environment:
+      - CR_EPAY_DEBUG=false
+      - CR_EPAY_LISTEN=:4560
+      - CR_EPAY_BASE=${CR_EPAY_BASE}
+      - CR_EPAY_CLOUDREVE_KEY=${CR_EPAY_CLOUDREVE_KEY}
+      - CR_EPAY_EPAY_PARTNER_ID=${CR_EPAY_EPAY_PARTNER_ID}
+      - CR_EPAY_EPAY_KEY=${CR_EPAY_EPAY_KEY}
+      - CR_EPAY_EPAY_ENDPOINT=${CR_EPAY_EPAY_ENDPOINT}
+      - CR_EPAY_EPAY_PURCHASE_TYPE=${CR_EPAY_EPAY_PURCHASE_TYPE:-alipay}
+      - CR_EPAY_REDIS_ENABLED=true
+      - CR_EPAY_REDIS_SERVER=redis:6379
+      - CR_EPAY_REDIS_PASSWORD=${CR_EPAY_REDIS_PASSWORD:-}
+      - CR_EPAY_REDIS_DB=${CR_EPAY_REDIS_DB:-0}
+      - CR_EPAY_PAYMENT_TEMPLATE=${CR_EPAY_PAYMENT_TEMPLATE:-payment_template.html}
+      - CR_EPAY_AUTO_SUBMIT=${CR_EPAY_AUTO_SUBMIT:-true}
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - epay-network
+
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - epay-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+
+networks:
+  epay-network:
+    driver: bridge

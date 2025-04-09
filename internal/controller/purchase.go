@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
@@ -20,7 +21,8 @@ type PurchaseRequest struct {
 	Name      string `json:"name" binding:"required"`
 	OrderNo   string `json:"order_no" binding:"required"`
 	NotifyUrl string `json:"notify_url" binding:"required"`
-	Amount    int    `json:"amount" binding:"required"`
+	Amount    int    `json:"amount" binding:"required"` // 订单金额，使用货币的最小单位
+	Currency  string `json:"currency" binding:"required"` // 货币的 ISO 4217 代码
 }
 
 type PurchaseResponse struct {
@@ -40,6 +42,36 @@ func (pc *CloudrevePayController) Purchase(c *gin.Context) {
 			"code":    http.StatusBadRequest,
 			"data":    "",
 			"message": "无法解析请求" + err.Error(),
+		})
+		return
+	}
+
+	// 验证货币类型
+	if req.Currency != "CNY" {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"data":    "",
+			"message": "不支持的货币类型：" + req.Currency,
+		})
+		return
+	}
+
+	// 验证金额范围（0.01-1000000.00）
+	if req.Amount < 1 || req.Amount > 100000000 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"data":    "",
+			"message": "金额超出范围",
+		})
+		return
+	}
+
+	// 验证回调 URL 格式
+	if _, err := url.Parse(req.NotifyUrl); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"code":    http.StatusBadRequest,
+			"data":    "",
+			"message": "无效的回调 URL",
 		})
 		return
 	}
@@ -119,14 +151,26 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 		return
 	}
 
+	// 将订单金额从分转换为元（除以100），并保留两位小数
 	amount := decimal.NewFromInt(int64(order.Amount)).Div(decimal.NewFromInt(100)).StringFixedBank(2)
+
+	// 获取客户端IP
+	clientIP := c.ClientIP()
+
+	// 判断设备类型
+	deviceType := epay.PC
+	userAgent := c.Request.UserAgent()
+	if strings.Contains(strings.ToLower(userAgent), "mobile") {
+		deviceType = epay.MOBILE
+	}
 
 	args := &epay.PurchaseArgs{
 		Type:           epay.PurchaseType(pc.Conf.EpayPurchaseType),
 		ServiceTradeNo: order.OrderNo,
 		Name:           order.Name,
 		Money:          amount,
-		Device:         epay.PC,
+		Device:         deviceType,
+		ClientIP:       clientIP,
 		NotifyUrl:      baseURL.ResolveReference(purchaseURL),
 		ReturnUrl:      baseURL.ResolveReference(returnURL),
 	}
@@ -143,8 +187,13 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 
 	endpoint, purchaseParams := client.Purchase(args)
 
-	c.HTML(http.StatusOK, "purchase.tmpl", gin.H{
+	c.HTML(http.StatusOK, "payment_template.html", gin.H{
 		"Endpoint": endpoint,
 		"Params":   purchaseParams,
+		"Name":     args.Name,
+		"OrderNo":  args.ServiceTradeNo,
+		"Money":    args.Money,
+		"PayType":  args.Type,
+		"AutoSubmit": pc.Conf.AutoSubmit,
 	})
 }

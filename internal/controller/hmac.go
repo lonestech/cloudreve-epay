@@ -110,14 +110,19 @@ type HMACAuth struct {
 // Sign 对给定Body生成expires后失效的签名，expires为过期时间戳，
 // 填写为0表示不限制有效期
 func (auth HMACAuth) Sign(body string, expires int64) string {
-	h := hmac.New(sha256.New, auth.CloudreveKey)
+	// 生成过期时间戳
 	expireTimeStamp := strconv.FormatInt(expires, 10)
-	_, err := io.WriteString(h, body+":"+expireTimeStamp)
-	if err != nil {
-		return ""
-	}
-
-	return base64.URLEncoding.EncodeToString(h.Sum(nil)) + ":" + expireTimeStamp
+	
+	// 拼接签名内容
+	signContentFinal := fmt.Sprintf("%s:%s", body, expireTimeStamp)
+	
+	// 使用 HMAC-SHA256 生成签名
+	h := hmac.New(sha256.New, auth.CloudreveKey)
+	h.Write([]byte(signContentFinal))
+	signature := fmt.Sprintf("%x", h.Sum(nil))
+	
+	// 返回最终的签名格式
+	return signature + ":" + expireTimeStamp
 }
 
 // // Check 对给定Body和Sign进行鉴权，包括对expires的检查
