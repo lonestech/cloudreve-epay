@@ -5,31 +5,26 @@ on: workflow_dispatch
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-22.04  # 升级操作系统版本
+    runs-on: ubuntu-20.04
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v4  # 升级到最新版本
+    - name: Set up Go 1.20
+      uses: actions/setup-go@v4
       with:
-        go-version: "~1.20"  # 波浪线语法保持补丁更新
-        check-latest: true
+        go-version: "1.24"
+      id: go
 
-    - name: Checkout Code
-      uses: actions/checkout@v4  # 升级到最新版本
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
       with:
-        fetch-depth: 0  # 获取完整提交历史
-        submodules: recursive
-
-    - name: Configure Go Cache
-      uses: actions/cache@v3  # 新增依赖缓存
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-
-    - name: Setup Goreleaser
+        clean: false
+        submodules: "recursive"
+    - run: |
+        git fetch --prune --unshallow --tags
+    - name: Build and Release
       uses: goreleaser/goreleaser-action@v4
       with:
-        args: release --clean 
+        distribution: goreleaser
+        version: latest
+        args: release --clean --skip-validate
       env:
         GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
