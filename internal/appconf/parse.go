@@ -18,8 +18,12 @@ var (
 
 func Parse() (*Config, error) {
 	// Try to load .env file if it exists, but don't fail if it doesn't
-	_ = godotenv.Load(".env")
-	_ = godotenv.Load(filepath.Join(Root, ".env"))
+	if err := godotenv.Load(".env"); err != nil {
+		logrus.Debugln("No .env file found in current directory")
+	}
+	if err := godotenv.Load(filepath.Join(Root, ".env")); err != nil {
+		logrus.Debugln("No .env file found in project root")
+	}
 
 	var config Config
 	err := envconfig.Process("cr_epay", &config)
