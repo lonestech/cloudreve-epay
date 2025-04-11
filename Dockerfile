@@ -22,9 +22,12 @@ RUN apk --no-cache add ca-certificates tzdata
 # 设置时区
 ENV TZ=Asia/Shanghai
 
-# 从构建阶段复制二进制文件
+# 从构建阶段复制二进制文件和模板
 COPY --from=builder /build/epay /app/
 COPY --from=builder /build/templates /app/templates
+
+# 确保模板文件存在于正确的位置
+RUN ls -la /app/templates/*.tmpl || (echo "Template files are missing" && exit 1)
 
 # 创建配置目录
 RUN mkdir -p /app/custom
