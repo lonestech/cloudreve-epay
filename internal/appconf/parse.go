@@ -17,16 +17,12 @@ var (
 )
 
 func Parse() (*Config, error) {
-
-	err := godotenv.Load(".env")
+	// Try to load .env file if it exists, but don't fail if it doesn't
+	_ = godotenv.Load(".env")
 	_ = godotenv.Load(filepath.Join(Root, ".env"))
-	if err != nil {
-		logrus.WithError(err).Fatalln("无法加载 .env 文件")
-		return nil, err
-	}
 
 	var config Config
-	err = envconfig.Process("cr_epay", &config)
+	err := envconfig.Process("cr_epay", &config)
 
 	if err != nil {
 		envconfig.Usage("cr_epay", &config)

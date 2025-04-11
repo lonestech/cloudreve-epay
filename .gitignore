@@ -67,6 +67,7 @@ cmake-build-*/
 
 # IntelliJ
 out/
+dist/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -113,3 +114,4 @@ __debug_bin
 
 .env
 custom/
+.DS_Store
