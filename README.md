@@ -48,7 +48,7 @@ sudo systemctl enable --now cloudreve-epay
 1. 克隆仓库或下载源码
 
 ```bash
-git clone https://github.com/topjohncian/cloudreve-epay.git
+git clone https://github.com/lonestech/cloudreve-epay.git
 cd cloudreve-epay
 ```
 
@@ -169,6 +169,31 @@ environment:
 3. **安全配置**：确保 `CR_EPAY_CLOUDREVE_KEY` 使用强密码，并保持其私密性
 4. **模板导出**：使用 `-eject` 参数导出模板，避免 XSS 风险
 5. **支付方式**：通过 `CR_EPAY_EPAY_PURCHASE_TYPE` 设置默认支付方式，建议选择有自己收银台的易支付服务
+
+## 反向代理配置
+
+### Caddy
+
+```caddyfile
+payment.example.com {
+    reverse_proxy localhost:4560
+}
+```
+### Nginx
+```
+server {
+    listen 80;
+    server_name payment.example.com;
+
+    location / {
+        proxy_pass http://localhost:4560;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
 
 ## 开发指南
 
