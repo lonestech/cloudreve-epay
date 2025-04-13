@@ -24,13 +24,13 @@ ENV TZ=Asia/Shanghai
 
 # 从构建阶段复制二进制文件和模板
 COPY --from=builder /build/epay /app/
-COPY --from=builder /build/templates /app/templates
+
+# 创建配置目录并复制模板
+RUN mkdir -p /app/custom/templates
+COPY --from=builder /build/templates/*.tmpl /app/custom/templates/
 
 # 确保模板文件存在于正确的位置
-RUN ls -la /app/templates/*.tmpl || (echo "Template files are missing" && exit 1)
-
-# 创建配置目录
-RUN mkdir -p /app/custom
+RUN ls -la /app/custom/templates/*.tmpl || (echo "Template files are missing" && exit 1)
 
 # 环境变量已在 docker-compose.yml 中定义，不需要复制 .env 文件
 
