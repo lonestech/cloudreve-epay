@@ -52,25 +52,6 @@
             font-weight: 500;
         }
         
-        .payment-details {
-            margin-bottom: 24px;
-            text-align: left;
-        }
-        
-        .payment-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            color: var(--text-color);
-        }
-        
-        .payment-row:last-child {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #f0f0f0;
-            font-weight: bold;
-        }
-        
         .payment-button {
             background-color: var(--primary-color);
             color: white;
@@ -81,6 +62,7 @@
             cursor: pointer;
             width: 100%;
             transition: background-color 0.3s;
+            margin-bottom: 20px;
         }
         
         .payment-button:hover {
@@ -105,33 +87,6 @@
             color: var(--success-color);
             font-size: 14px;
         }
-        
-        .loading {
-            display: none;
-            margin: 0 auto;
-        }
-        
-        .loading-active .payment-button-text {
-            display: none;
-        }
-        
-        .loading-active .loading {
-            display: inline-block;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .spinner {
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 2px solid white;
-            width: 16px;
-            height: 16px;
-            animation: spin 1s linear infinite;
-        }
     </style>
 </head>
 <body>
@@ -142,21 +97,6 @@
             </svg>
         </div>
         <h1>订单支付</h1>
-        
-        <div class="payment-details">
-            <div class="payment-row">
-                <span>商品名称</span>
-                <span>高级会员套餐</span>
-            </div>
-            <div class="payment-row">
-                <span>订单编号</span>
-                <span>202504281635</span>
-            </div>
-            <div class="payment-row">
-                <span>支付金额</span>
-                <span>¥398.00</span>
-            </div>
-        </div>
         
         <form id='purchase' name='purchase' action='{{.Endpoint}}' method='POST'>
             {{range $key,$value := .Params}}
