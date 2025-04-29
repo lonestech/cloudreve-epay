@@ -54,7 +54,7 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 	logrus.WithField("data", data).Debug("创建 USDTMore 交易请求")
 
 	// 发送请求
-	url := c.config.APIEndpoint + "/api/order/create-transaction"
+	url := c.config.APIEndpoint + "/api/v1/order/create-transaction"
 	logrus.WithField("url", url).Debug("发送请求到 USDTMore API")
 
 	// 发送请求
@@ -73,43 +73,75 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 		"body": string(resp.Bytes()),
 	}).Debug("USDTMore API 响应")
 
-	var result struct {
-		Code int                     `json:"code"`
-		Msg  string                  `json:"msg"`
-		Data *CreateTransactionResponse `json:"data"`
+	// 先打印原始响应内容以便调试
+	respContent := string(resp.Bytes())
+	logrus.WithField("response_content", respContent).Debug("USDTMore API 原始响应内容")
+
+	// 尝试解析异次元发卡格式的响应
+	var acgResult struct {
+		StatusCode int                     `json:"status_code"`
+		Message    string                  `json:"message"`
+		Data       *CreateTransactionResponse `json:"data"`
 	}
 
-	err = json.Unmarshal(resp.Bytes(), &result)
+	err = json.Unmarshal(resp.Bytes(), &acgResult)
 	if err != nil {
 		logrus.WithError(err).Error("解析 USDTMore API 响应失败")
 		return nil, fmt.Errorf("解析 USDTMore API 响应失败: %w", err)
 	}
 
-	if result.Code != 0 {
+	if acgResult.StatusCode != 200 {
 		logrus.WithFields(logrus.Fields{
-			"code": result.Code,
-			"msg": result.Msg,
+			"status_code": acgResult.StatusCode,
+			"message": acgResult.Message,
 		}).Error("USDTMore API 返回错误")
-		return nil, fmt.Errorf("USDTMore API 错误: %s", result.Msg)
+		return nil, fmt.Errorf("USDTMore API 错误: %s", acgResult.Message)
+	}
+
+	// 如果数据为空，尝试原始格式
+	if acgResult.Data == nil {
+		// 尝试原始格式
+		var result struct {
+			Code int                     `json:"code"`
+			Msg  string                  `json:"msg"`
+			Data *CreateTransactionResponse `json:"data"`
+		}
+
+		err = json.Unmarshal(resp.Bytes(), &result)
+		if err != nil {
+			logrus.WithError(err).Error("解析 USDTMore API 原始格式响应失败")
+			return nil, fmt.Errorf("解析 USDTMore API 原始格式响应失败: %w", err)
+		}
+
+		if result.Code != 0 {
+			logrus.WithFields(logrus.Fields{
+				"code": result.Code,
+				"msg": result.Msg,
+			}).Error("USDTMore API 返回错误")
+			return nil, fmt.Errorf("USDTMore API 错误: %s", result.Msg)
+		}
+
+		// 使用原始格式的数据
+		acgResult.Data = result.Data
 	}
 
 	// 检查响应数据是否为空
-	if result.Data == nil {
+	if acgResult.Data == nil {
 		logrus.Error("USDTMore API 返回的数据为空")
 		return nil, fmt.Errorf("USDTMore API 返回的数据为空")
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"trade_id": result.Data.TradeID,
-		"order_id": result.Data.OrderID,
-		"amount": result.Data.Amount,
-		"actual_amount": result.Data.ActualAmount,
-		"token": result.Data.Token,
-		"expiration_time": result.Data.ExpirationTime,
-		"payment_url": result.Data.PaymentURL,
+		"trade_id": acgResult.Data.TradeID,
+		"order_id": acgResult.Data.OrderID,
+		"amount": acgResult.Data.Amount,
+		"actual_amount": acgResult.Data.ActualAmount,
+		"token": acgResult.Data.Token,
+		"expiration_time": acgResult.Data.ExpirationTime,
+		"payment_url": acgResult.Data.PaymentURL,
 	}).Info("USDTMore 交易创建成功")
 
-	return result.Data, nil
+	return acgResult.Data, nil
 }
 
 // CheckOrderStatus 检查订单状态
