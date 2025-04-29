@@ -54,15 +54,24 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 	logrus.WithField("data", data).Debug("创建 USDTMore 交易请求")
 
 	// 发送请求
-	// 根据独角数卡的实现，直接使用完整的 API 端点 URL
-	url := c.config.APIEndpoint
+	// 根据独角数卡的实现，在基础 URL 上添加路径
+	url := c.config.APIEndpoint + "/api/v1/order/create-transaction"
 	logrus.WithField("url", url).Debug("发送请求到 USDTMore API")
 
 	// 发送请求
 	// 根据独角数卡的实现，设置 Content-Type 为 application/json
+	// 将请求数据转换为 JSON 字符串
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		logrus.WithError(err).Error("将请求数据转换为 JSON 失败")
+		return nil, fmt.Errorf("将请求数据转换为 JSON 失败: %w", err)
+	}
+
+	logrus.WithField("json_data", string(jsonData)).Debug("JSON 格式的请求数据")
+
 	resp, err := c.client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(data).
+		SetBody(jsonData).
 		Post(url)
 
 	if err != nil {
@@ -211,17 +220,33 @@ func (c *Client) generateSignature(data map[string]interface{}) string {
 	sort.Strings(keys)
 
 	// 构建签名字符串
+	// 根据独角数卡的实现，使用 URL 参数形式拼接
 	var signStr strings.Builder
-	for _, k := range keys {
+	for i, k := range keys {
+		// 跳过空值
+		if data[k] == "" {
+			continue
+		}
+		// 跳过 signature 字段
+		if k == "signature" {
+			continue
+		}
+		
+		// 添加分隔符
+		if i > 0 && signStr.Len() > 0 {
+			signStr.WriteString("&")
+		}
+		
+		// 拼接为 URL 参数形式
 		signStr.WriteString(k)
 		signStr.WriteString("=")
 		signStr.WriteString(fmt.Sprintf("%v", data[k]))
-		signStr.WriteString("&")
 	}
-	signStr.WriteString("token=")
-	signStr.WriteString(c.config.AuthToken)
 
+	// 在签名字符串后面直接添加密钥（不加分隔符）
+	signData := signStr.String() + c.config.AuthToken
+	
 	// 计算 MD5
-	hash := md5.Sum([]byte(signStr.String()))
+	hash := md5.Sum([]byte(signData))
 	return fmt.Sprintf("%x", hash)
 }

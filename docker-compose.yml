@@ -24,7 +24,8 @@ services:
       - CR_EPAY_AUTO_SUBMIT=true
       # USDTMore 配置
       - CR_EPAY_USDT_MORE_ENABLED=true
-      - CR_EPAY_USDT_MORE_API_ENDPOINT=https://us.wkk.su/api/v1/order/create-transaction
+      # 根据独角数卡的实现，完整的 API 端点应该是基础 URL
+      - CR_EPAY_USDT_MORE_API_ENDPOINT=https://us.wkk.su
       - CR_EPAY_USDT_MORE_AUTH_TOKEN=jWSJrZs5eT11TpWCEyAc78jAwxh9ReA8
       - CR_EPAY_USDT_MORE_DEFAULT_CHAIN=TRON
     depends_on:
