@@ -102,7 +102,7 @@
             {{range $key,$value := .Params}}
                 <input type='hidden' name='{{$key}}' value='{{$value}}' />
             {{end}}
-            <input type='submit' value='支付宝/微信支付' class="payment-button"/>
+            <button type='submit' class="payment-button">支付宝/微信支付</button>
         </form>
         
         <!-- USDT 支付选项 -->

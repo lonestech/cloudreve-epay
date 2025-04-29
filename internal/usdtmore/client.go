@@ -54,13 +54,22 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 	logrus.WithField("data", data).Debug("创建 USDTMore 交易请求")
 
 	// 发送请求
+	url := c.config.APIEndpoint + "/api/v1/order/create-transaction"
+	logrus.WithField("url", url).Debug("发送请求到 USDTMore API")
+
 	resp, err := c.client.R().
 		SetBody(data).
-		Post(c.config.APIEndpoint + "/api/v1/order/create-transaction")
+		Post(url)
 
 	if err != nil {
-		return nil, err
+		logrus.WithError(err).Error("发送请求到 USDTMore API 失败")
+		return nil, fmt.Errorf("发送请求到 USDTMore API 失败: %w", err)
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"status": resp.StatusCode,
+		"body": string(resp.Bytes()),
+	}).Debug("USDTMore API 响应")
 
 	var result struct {
 		Code int                     `json:"code"`

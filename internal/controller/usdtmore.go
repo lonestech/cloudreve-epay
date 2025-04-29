@@ -51,6 +51,23 @@ func (pc *CloudrevePayController) USDTMorePurchase(c *gin.Context) {
 
 	// 创建 USDTMore 交易
 	client := pc.USDTMoreClient
+	if client == nil {
+		logrus.Errorln("USDTMore 客户端未初始化")
+		c.HTML(http.StatusOK, "error.tmpl", gin.H{
+			"message": "USDT 支付服务当前不可用",
+		})
+		return
+	}
+
+	// 记录请求参数
+	logrus.WithFields(logrus.Fields{
+		"OrderID":     order.OrderNo,
+		"Name":        order.Name,
+		"Amount":      amount,
+		"NotifyURL":   baseURL.ResolveReference(callbackURL).String(),
+		"RedirectURL": baseURL.ResolveReference(returnURL).String(),
+	}).Info("USDTMore 支付请求参数")
+
 	result, err := client.Purchase(&usdtmore.PurchaseArgs{
 		OrderID:     order.OrderNo,
 		Name:        order.Name,
