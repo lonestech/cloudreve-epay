@@ -19,9 +19,9 @@ type PurchaseArgs struct {
 
 // PurchaseResult USDTMore 购买结果
 type PurchaseResult struct {
-	PaymentURL    string // 支付 URL
-	Token         string // 收款地址
-	ActualAmount  string // 实际支付金额
+	PaymentURL     string // 支付 URL
+	Token          string // 收款地址
+	ActualAmount   string // 实际支付金额
 	ExpirationTime int    // 过期时间（秒）
 }
 
@@ -52,17 +52,17 @@ func (c *Client) Purchase(args *PurchaseArgs) (*PurchaseResult, error) {
 
 	// 记录响应信息
 	logrus.WithFields(logrus.Fields{
-		"PaymentURL": resp.PaymentURL,
-		"Token": resp.Token,
-		"ActualAmount": resp.ActualAmount,
+		"PaymentURL":     resp.PaymentURL,
+		"Token":          resp.Token,
+		"ActualAmount":   resp.ActualAmount,
 		"ExpirationTime": resp.ExpirationTime,
 	}).Info("USDTMore 交易创建成功")
 
 	// 返回购买结果
 	return &PurchaseResult{
-		PaymentURL:    resp.PaymentURL,
-		Token:         resp.Token,
-		ActualAmount:  resp.ActualAmount,
+		PaymentURL:     resp.PaymentURL,
+		Token:          resp.Token,
+		ActualAmount:   resp.ActualAmount,
 		ExpirationTime: resp.ExpirationTime,
 	}, nil
 }
@@ -76,9 +76,9 @@ func (r *PurchaseResult) FormatExpirationTime() string {
 // GetQRCodeURL 获取二维码 URL
 func (r *PurchaseResult) GetQRCodeURL() string {
 	// 构建 USDT 转账数据
-	tetherData := fmt.Sprintf("tether:%s?amount=%s", r.Token, r.ActualAmount)
-	
+	tetherData := fmt.Sprintf("%s", r.Token)
+
 	// 使用 QRServer API，这是一个更可靠的二维码生成服务
-	return fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s", 
+	return fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s",
 		url.QueryEscape(tetherData))
 }

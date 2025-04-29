@@ -98,19 +98,29 @@
         </div>
         <h1>订单支付</h1>
         
-        <form id='purchase' name='purchase' action='{{.Endpoint}}' method='POST'>
-            {{range $key,$value := .Params}}
-                <input type='hidden' name='{{$key}}' value='{{$value}}' />
+        <div class="payment-buttons">
+            <form id='purchase' name='purchase' action='{{.Endpoint}}' method='POST' style="margin-bottom: 10px;">
+                {{range $key,$value := .Params}}
+                    <input type='hidden' name='{{$key}}' value='{{$value}}' />
+                {{end}}
+                <button type='submit' class="payment-button" style="width: 100%; padding: 12px 0; border-radius: 4px; border: none; background-color: #1890ff; color: white; font-size: 16px; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
+                    </svg>
+                    支付宝/微信支付
+                </button>
+            </form>
+            
+            <!-- USDT 支付选项 -->
+            {{if .USDTMoreEnabled}}
+            <a href="/purchase/usdtmore/{{.OrderId}}" class="payment-button" style="display: block; width: 100%; padding: 12px 0; border-radius: 4px; text-align: center; text-decoration: none; background-color: #26A17B; color: white; font-size: 16px; cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                </svg>
+                USDT 支付
+            </a>
             {{end}}
-            <button type='submit' class="payment-button">支付宝/微信支付</button>
-        </form>
-        
-        <!-- USDT 支付选项 -->
-        {{if .USDTMoreEnabled}}
-        <a href="/purchase/usdtmore/{{.OrderId}}" class="payment-button" style="display: block; text-decoration: none; background-color: #26A17B; margin-top: 10px;">
-            USDT 支付
-        </a>
-        {{end}}
+        </div>
         
         <div class="secure-text">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
