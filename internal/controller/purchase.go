@@ -137,6 +137,13 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 
 	endpoint, purchaseParams := client.Purchase(args)
 
+	// 添加调试日志
+	logrus.WithFields(logrus.Fields{
+		"USDTMoreEnabled": pc.Conf.USDTMoreEnabled,
+		"USDTMoreClient": pc.USDTMoreClient != nil,
+		"USDTMoreAPIEndpoint": pc.Conf.USDTMoreAPIEndpoint,
+	}).Info("支付页面配置信息")
+
 	c.HTML(http.StatusOK, "purchase.tmpl", gin.H{
 		"Endpoint": endpoint,
 		"Params":   purchaseParams,
