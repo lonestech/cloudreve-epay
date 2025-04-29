@@ -8,6 +8,7 @@ import (
 	"github.com/topjohncian/cloudreve-pro-epay/internal/cache"
 	"github.com/topjohncian/cloudreve-pro-epay/internal/controller"
 	"github.com/topjohncian/cloudreve-pro-epay/internal/server"
+	"github.com/topjohncian/cloudreve-pro-epay/internal/usdtmore"
 	"go.uber.org/fx"
 )
 
@@ -26,6 +27,9 @@ func AppEntry() []fx.Option {
 			return req.C()
 		}),
 		controller.Module(),
+
+		// 添加 USDTMore 模块
+		usdtmore.Module,
 
 		fx.StartTimeout(1 * time.Second),
 		fx.StopTimeout(5 * time.Minute),

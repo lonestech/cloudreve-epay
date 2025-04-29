@@ -21,7 +21,6 @@ services:
       - CR_EPAY_REDIS_SERVER=redis:6379
       - CR_EPAY_REDIS_PASSWORD=
       - CR_EPAY_REDIS_DB=0
-      - CR_EPAY_PAYMENT_TEMPLATE=payment_template.html
       - CR_EPAY_AUTO_SUBMIT=true
     depends_on:
       - redis

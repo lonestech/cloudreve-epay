@@ -16,7 +16,7 @@ func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 		sign := c.Query("sign")
 		if sign != "" {
 			logrus.WithField("sign", sign).Debugln("从 URL 参数中获取到 sign")
-			
+
 			// 分解 sign 参数
 			signParts := strings.Split(sign, ":")
 			if len(signParts) != 2 {
@@ -28,7 +28,7 @@ func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 				})
 				return
 			}
-			
+
 			// 验证是否过期
 			expires, err := strconv.ParseInt(signParts[1], 10, 64)
 			if err != nil {
@@ -40,7 +40,7 @@ func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 				})
 				return
 			}
-			
+
 			// 如果签名过期
 			if expires < time.Now().Unix() && expires != 0 {
 				logrus.WithField("sign", sign).WithField("expires", expires).Debugln("sign 参数已过期")
@@ -51,13 +51,13 @@ func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 				})
 				return
 			}
-			
+
 			// 对于 URL 参数中的 sign，直接允许通过
 			logrus.WithField("sign", sign).Debugln("sign 参数验证成功")
 			c.Set("CloudreveAuthUser", "url_sign_user")
 			return
 		}
-		
+
 		// 如果没有 sign 参数，则检查 Authorization 头
 		authorization := c.Request.Header.Get("Authorization")
 		if authorization == "" || !strings.HasPrefix(authorization, "Bearer ") {
@@ -111,10 +111,10 @@ func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 
 		// 获取待签名内容
 		signContent := getSignContent(c.Request)
-		
+
 		// 生成签名
 		generatedSign := auth.Sign(signContent, expires)
-		
+
 		// 检查签名是否匹配
 		// 修复可能的前缀问题
 		signatureTrimmed := signature
@@ -123,14 +123,14 @@ func (pc *CloudrevePayController) BearerAuthMiddleware() gin.HandlerFunc {
 			// 取最后一部分作为实际签名
 			signatureTrimmed = parts[len(parts)-1]
 		}
-		
+
 		if signatureTrimmed != generatedSign {
 			logrus.WithFields(logrus.Fields{
-				"Authorization": authorization,
-				"signature": signature,
+				"Authorization":    authorization,
+				"signature":        signature,
 				"signatureTrimmed": signatureTrimmed,
-				"generatedSign": generatedSign,
-				"signContent": signContent,
+				"generatedSign":    generatedSign,
+				"signContent":      signContent,
 			}).Debugln("Authorization 头无效，签名不匹配")
 
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{

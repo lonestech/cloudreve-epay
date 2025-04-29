@@ -8,12 +8,13 @@
 
 - ✅ 完整支持 Cloudreve Pro 自定义支付接口规范
 - ✅ 支持订单创建、支付通知和订单状态查询
-- ✅ 支持多种支付方式（支付宝、微信支付等）
+- ✅ 支持多种支付方式（支付宝、微信支付、USDT 等）
 - ✅ 安全的 HMAC 签名验证机制
 - ✅ 支持 Redis 缓存，确保支付状态可靠存储
 - ✅ 自定义订单名称
 - ✅ 支持模板导出，避免 XSS 风险
 - ✅ 支持 Cloudreve V4 回调格式
+- ✅ 支持 USDT 多链支付（TRC20、ERC20、Polygon、BSC 等）
 
 ## 系统要求
 
@@ -70,8 +71,12 @@ environment:
   - CR_EPAY_REDIS_SERVER=redis:6379
   - CR_EPAY_REDIS_PASSWORD=
   - CR_EPAY_REDIS_DB=0
-  - CR_EPAY_PAYMENT_TEMPLATE=payment_template.html
   - CR_EPAY_AUTO_SUBMIT=true
+  # USDTMore 配置（可选，用于支持 USDT 支付）
+  - CR_EPAY_USDTMORE_ENABLED=false
+  - CR_EPAY_USDTMORE_API_ENDPOINT=http://usdtmore:6080
+  - CR_EPAY_USDTMORE_AUTH_TOKEN=your_auth_token
+  - CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON
 ```
 
 3. 构建并启动容器
@@ -123,6 +128,12 @@ CR_EPAY_REDIS_ENABLED=true
 CR_EPAY_REDIS_SERVER=localhost:6379
 # CR_EPAY_REDIS_PASSWORD=your_redis_password
 CR_EPAY_REDIS_DB=0
+
+# USDTMore 配置（可选，用于支持 USDT 支付）
+CR_EPAY_USDTMORE_ENABLED=false
+CR_EPAY_USDTMORE_API_ENDPOINT=http://localhost:6080
+CR_EPAY_USDTMORE_AUTH_TOKEN=your_auth_token
+CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON  # 可选值：TRON, POLY, OP, BSC
 ```
 
 #### Docker 部署方式（docker-compose.yml）
@@ -145,8 +156,12 @@ environment:
   - CR_EPAY_REDIS_SERVER=redis:6379
   - CR_EPAY_REDIS_PASSWORD=
   - CR_EPAY_REDIS_DB=0
-  - CR_EPAY_PAYMENT_TEMPLATE=payment_template.html
   - CR_EPAY_AUTO_SUBMIT=true
+  # USDTMore 配置（可选，用于支持 USDT 支付）
+  - CR_EPAY_USDTMORE_ENABLED=false
+  - CR_EPAY_USDTMORE_API_ENDPOINT=http://usdtmore:6080
+  - CR_EPAY_USDTMORE_AUTH_TOKEN=your_auth_token
+  - CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON
 ```
 
 注意：使用 Docker 部署时，不需要创建 `.env` 文件，所有配置都在 `docker-compose.yml` 文件中定义。
@@ -169,6 +184,34 @@ environment:
 3. **安全配置**：确保 `CR_EPAY_CLOUDREVE_KEY` 使用强密码，并保持其私密性
 4. **模板导出**：使用 `-eject` 参数导出模板，避免 XSS 风险
 5. **支付方式**：通过 `CR_EPAY_EPAY_PURCHASE_TYPE` 设置默认支付方式，建议选择有自己收银台的易支付服务
+
+## USDT 支付配置
+
+如果您想启用 USDT 支付功能，需要按照以下步骤进行配置：
+
+1. **部署 USDTMore 服务**：
+   - 克隆 USDTMore 仓库：`git clone https://github.com/botinheart/USDTMore.git`
+   - 按照 USDTMore 的文档进行部署和配置
+   - 确保 USDTMore 服务正常运行，默认端口为 6080
+
+2. **配置 Telegram 机器人**：
+   - USDTMore 依赖 Telegram 机器人进行通知和管理
+   - 设置 `TG_BOT_TOKEN` 和 `TG_BOT_ADMIN_ID`
+   - 详细配置请参考 USDTMore 文档
+
+3. **添加钱包地址**：
+   - 通过 Telegram 机器人添加 USDT 收款地址
+   - 支持多链地址：TRON(TRC20)、Polygon、Optimism、BSC
+
+4. **配置 cloudreve-epay**：
+   - 启用 USDTMore 支持：`CR_EPAY_USDTMORE_ENABLED=true`
+   - 设置 API 端点：`CR_EPAY_USDTMORE_API_ENDPOINT=http://your-usdtmore-server:6080`
+   - 配置认证令牌：`CR_EPAY_USDTMORE_AUTH_TOKEN=your_auth_token`（与 USDTMore 的 AUTH_TOKEN 保持一致）
+   - 选择默认链路：`CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON`（可选值：TRON, POLY, OP, BSC）
+
+5. **重启 cloudreve-epay 服务**：
+   - 重启服务以应用新的配置
+   - 在支付页面中将出现 USDT 支付选项
 
 ## 反向代理配置
 
@@ -199,45 +242,41 @@ server {
 
 ### 从源码构建
 
+1. 克隆仓库
+
 ```bash
-# 克隆仓库
-git clone https://github.com/topjohncian/cloudreve-epay.git
+git clone https://github.com/lonestech/cloudreve-epay.git
 cd cloudreve-epay
-
-# 安装依赖
-go mod tidy
-
-# 构建
-go build -o cloudreve-epay
 ```
 
-### API 文档
+2. 安装依赖
 
-本项目实现了 Cloudreve Pro 自定义支付接口规范，详细 API 文档请参考 [custom.md](custom.md)。
+```bash
+go mod download
+```
 
-## 更新日志
+3. 构建
 
-### 0.3 (2025-04-09)
+```bash
+go build -o cloudreve-epay main.go
+```
 
-- 实现订单状态查询功能
-- 优化缓存机制，提高支付状态可靠性
-- 改进 HMAC 签名验证机制
-- 更新依赖库，提高安全性
+### 导出模板
 
-### 0.2
+如果您想自定义模板，可以使用 `-eject` 参数导出默认模板：
 
-- 修复易支付自定义付款方式，添加 `CR_EPAY_EPAY_PURCHASE_TYPE` 配置
-- 支持自定义商品名称
+```bash
+./cloudreve-epay -eject
+```
 
-### 0.1
-
-- 初始版本发布
-- 实现基本的易支付集成功能
-
-## 贡献指南
-
-欢迎提交 Issues 和 Pull Requests 来帮助改进这个项目！
+这将在当前目录下创建 `custom` 文件夹，您可以修改其中的模板文件。
 
 ## 许可证
 
-本项目采用 MIT 许可证。
+本项目采用 MIT 许可证。详情请参阅 [LICENSE](LICENSE) 文件。
+
+## 致谢
+
+- [Cloudreve](https://github.com/cloudreve/Cloudreve) - 支持本项目的主要应用
+- [Gin](https://github.com/gin-gonic/gin) - HTTP 框架
+- [fx](https://github.com/uber-go/fx) - 依赖注入框架

@@ -140,5 +140,8 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 	c.HTML(http.StatusOK, "purchase.tmpl", gin.H{
 		"Endpoint": endpoint,
 		"Params":   purchaseParams,
+		"OrderId":  order.OrderNo,
+		"USDTMoreEnabled": pc.Conf.USDTMoreEnabled && pc.USDTMoreClient != nil,
+		"AutoSubmit": pc.Conf.AutoSubmit,
 	})
 }

@@ -102,8 +102,15 @@
             {{range $key,$value := .Params}}
                 <input type='hidden' name='{{$key}}' value='{{$value}}' />
             {{end}}
-            <input type='submit' value='支付' class="payment-button"/>
+            <input type='submit' value='支付宝/微信支付' class="payment-button"/>
         </form>
+        
+        <!-- USDT 支付选项 -->
+        {{if .USDTMoreEnabled}}
+        <a href="/purchase/usdtmore/{{.OrderId}}" class="payment-button" style="display: block; text-decoration: none; background-color: #26A17B; margin-top: 10px;">
+            USDT 支付
+        </a>
+        {{end}}
         
         <div class="secure-text">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
@@ -117,6 +124,8 @@
         </div>
     </div>
 
+    {{if .AutoSubmit}}
     <script>document.forms['purchase'].submit();</script>
+    {{end}}
 </body>
 </html>

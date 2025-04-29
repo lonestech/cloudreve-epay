@@ -5,6 +5,7 @@ import (
 	"github.com/imroc/req/v3"
 	"github.com/topjohncian/cloudreve-pro-epay/internal/appconf"
 	"github.com/topjohncian/cloudreve-pro-epay/internal/cache"
+	"github.com/topjohncian/cloudreve-pro-epay/internal/usdtmore"
 	"go.uber.org/fx"
 )
 
@@ -14,6 +15,9 @@ type CloudrevePayController struct {
 	Conf   *appconf.Config
 	Cache  cache.Driver
 	Client *req.Client
+
+	// USDTMore 客户端
+	USDTMoreClient *usdtmore.Client `optional:"true"`
 }
 
 func RegisterControllers(c CloudrevePayController, r *gin.Engine) {
@@ -27,6 +31,12 @@ func RegisterControllers(c CloudrevePayController, r *gin.Engine) {
 	// 添加 Cloudreve V4 版本的回调路由
 	r.GET("/api/v4/callback/custom/:id", c.CloudreveV4Callback)
 	r.POST("/api/v4/callback/custom/:id", c.CloudreveV4Callback)
+
+	// 添加 USDTMore 相关路由
+	if c.USDTMoreClient != nil {
+		r.GET("/purchase/usdtmore/:id", c.USDTMorePurchase)
+		r.GET("/api/usdtmore/check-status/:trade_id", c.USDTMoreCheckStatus)
+	}
 }
 
 func Module() fx.Option {
