@@ -57,6 +57,7 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 	url := c.config.APIEndpoint + "/api/v1/order/create-transaction"
 	logrus.WithField("url", url).Debug("发送请求到 USDTMore API")
 
+	// 发送请求
 	resp, err := c.client.R().
 		SetBody(data).
 		Post(url)
@@ -79,24 +80,55 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 
 	err = json.Unmarshal(resp.Bytes(), &result)
 	if err != nil {
-		return nil, err
+		logrus.WithError(err).Error("解析 USDTMore API 响应失败")
+		return nil, fmt.Errorf("解析 USDTMore API 响应失败: %w", err)
 	}
 
 	if result.Code != 0 {
+		logrus.WithFields(logrus.Fields{
+			"code": result.Code,
+			"msg": result.Msg,
+		}).Error("USDTMore API 返回错误")
 		return nil, fmt.Errorf("USDTMore API 错误: %s", result.Msg)
 	}
+
+	// 检查响应数据是否为空
+	if result.Data == nil {
+		logrus.Error("USDTMore API 返回的数据为空")
+		return nil, fmt.Errorf("USDTMore API 返回的数据为空")
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"trade_id": result.Data.TradeID,
+		"order_id": result.Data.OrderID,
+		"amount": result.Data.Amount,
+		"actual_amount": result.Data.ActualAmount,
+		"token": result.Data.Token,
+		"expiration_time": result.Data.ExpirationTime,
+		"payment_url": result.Data.PaymentURL,
+	}).Info("USDTMore 交易创建成功")
 
 	return result.Data, nil
 }
 
 // CheckOrderStatus 检查订单状态
 func (c *Client) CheckOrderStatus(tradeID string) (string, error) {
-	resp, err := c.client.R().
-		Get(c.config.APIEndpoint + "/pay/check-status/" + tradeID)
+	// 构建请求 URL
+	url := c.config.APIEndpoint + "/pay/check-status/" + tradeID
+	logrus.WithField("url", url).Debug("发送请求到 USDTMore API 检查订单状态")
+
+	// 发送请求
+	resp, err := c.client.R().Get(url)
 
 	if err != nil {
-		return "", err
+		logrus.WithError(err).Error("发送请求到 USDTMore API 检查订单状态失败")
+		return "", fmt.Errorf("发送请求到 USDTMore API 检查订单状态失败: %w", err)
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"status": resp.StatusCode,
+		"body": string(resp.Bytes()),
+	}).Debug("USDTMore API 检查订单状态响应")
 
 	var result struct {
 		TradeID   string `json:"trade_id"`
@@ -106,8 +138,15 @@ func (c *Client) CheckOrderStatus(tradeID string) (string, error) {
 
 	err = json.Unmarshal(resp.Bytes(), &result)
 	if err != nil {
-		return "", err
+		logrus.WithError(err).Error("解析 USDTMore API 检查订单状态响应失败")
+		return "", fmt.Errorf("解析 USDTMore API 检查订单状态响应失败: %w", err)
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"trade_id": result.TradeID,
+		"status": result.Status,
+		"return_url": result.ReturnURL,
+	}).Debug("USDTMore 订单状态")
 
 	// 状态：0-等待支付，1-支付成功，2-已过期
 	switch result.Status {
