@@ -1,16 +1,14 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/topjohncian/cloudreve-pro-epay/internal/usdtmore"
 )
 
 // USDTMorePurchase 处理 USDTMore 支付请求
@@ -51,56 +49,54 @@ func (pc *CloudrevePayController) USDTMorePurchase(c *gin.Context) {
 	callbackURL, _ := url.Parse("/api/v4/callback/custom/" + order.OrderNo)
 	returnURL, _ := url.Parse("/return/" + order.OrderNo)
 
-	// 直接创建 USDT 支付订单，不依赖外部 USDTMore API
+	// 创建 USDTMore 交易
+	client := pc.USDTMoreClient
+	if client == nil {
+		logrus.Errorln("USDTMore 客户端未初始化")
+		c.HTML(http.StatusOK, "error.tmpl", gin.H{
+			"message": "USDT 支付服务当前不可用",
+		})
+		return
+	}
+
+	// 记录请求参数
 	logrus.WithFields(logrus.Fields{
 		"OrderID":     order.OrderNo,
 		"Name":        order.Name,
 		"Amount":      amount,
 		"NotifyURL":   baseURL.ResolveReference(callbackURL).String(),
 		"RedirectURL": baseURL.ResolveReference(returnURL).String(),
+		"APIEndpoint": pc.Conf.USDTMoreAPIEndpoint,
+		"AuthToken":   pc.Conf.USDTMoreAuthToken,
+		"DefaultChain": pc.Conf.USDTMoreDefaultChain,
 	}).Info("USDTMore 支付请求参数")
 
-	// 使用模拟数据创建交易
-	tradeID := order.OrderNo + "_" + fmt.Sprintf("%d", time.Now().Unix())
-	
-	// 获取 USDT 地址（这里使用模拟地址，实际应用中应该使用真实地址）
-	usdtAddress := "TRX7YHbYPJYCJtSzKQtLLqZ5hEyLpbsXZH"
-	
-	// 计算实际支付金额（这里简单地使用原始金额）
-	actualAmount := fmt.Sprintf("%.2f", amount)
-	
-	// 计算过期时间
-	expirationTime := 3600 // 1小时
-	expirationTimeFormatted := time.Now().Add(time.Duration(expirationTime) * time.Second).Format("2006-01-02 15:04:05")
-	
-	// 生成支付 URL
-	paymentURL := baseURL.String() + "/pay/checkout-counter/" + tradeID
-	
-	// 生成二维码 URL
-	qrCodeURL := fmt.Sprintf("https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=%s&choe=UTF-8", 
-		url.QueryEscape(fmt.Sprintf("tether:%s?amount=%s", usdtAddress, actualAmount)))
+	result, err := client.Purchase(&usdtmore.PurchaseArgs{
+		OrderID:     order.OrderNo,
+		Name:        order.Name,
+		Amount:      amount,
+		NotifyURL:   baseURL.ResolveReference(callbackURL).String(),
+		RedirectURL: baseURL.ResolveReference(returnURL).String(),
+	})
 
-	logrus.WithFields(logrus.Fields{
-		"TradeID": tradeID,
-		"OrderID": order.OrderNo,
-		"Amount": amount,
-		"ActualAmount": actualAmount,
-		"Address": usdtAddress,
-		"ExpirationTime": expirationTimeFormatted,
-		"PaymentURL": paymentURL,
-		"QRCodeURL": qrCodeURL,
-	}).Info("USDTMore 交易创建成功")
+	if err != nil {
+		logrus.WithError(err).Errorln("创建 USDTMore 交易失败")
+		c.HTML(http.StatusOK, "error.tmpl", gin.H{
+			"message": "创建 USDT 支付订单失败: " + err.Error(),
+		})
+		return
+	}
 
 	// 渲染 USDT 支付页面
 	c.HTML(http.StatusOK, "usdtmore.tmpl", gin.H{
 		"OrderId":     order.OrderNo,
 		"Name":        order.Name,
 		"Amount":      strconv.FormatFloat(amount, 'f', 2, 64),
-		"USDTAmount":  actualAmount,
-		"Address":     usdtAddress,
-		"QRCodeURL":   qrCodeURL,
-		"ExpireTime":  expirationTimeFormatted,
-		"PaymentURL":  paymentURL,
+		"USDTAmount":  result.ActualAmount,
+		"Address":     result.Token,
+		"QRCodeURL":   result.GetQRCodeURL(),
+		"ExpireTime":  result.FormatExpirationTime(),
+		"PaymentURL":  result.PaymentURL,
 		"RedirectURL": baseURL.ResolveReference(returnURL).String(),
 	})
 }
@@ -116,28 +112,32 @@ func (pc *CloudrevePayController) USDTMoreCheckStatus(c *gin.Context) {
 		return
 	}
 
-	// 解析 tradeId 获取订单号
-	// 格式：orderNo_timestamp
-	parts := strings.Split(tradeId, "_")
-	if len(parts) < 2 {
-		logrus.WithField("trade_id", tradeId).Warn("无效的交易ID格式")
+	// 检查订单状态
+	client := pc.USDTMoreClient
+	if client == nil {
+		logrus.Errorln("USDTMore 客户端未初始化")
 		c.JSON(http.StatusOK, gin.H{
-			"code": 400,
-			"msg":  "无效的交易ID格式",
+			"code": 500,
+			"msg":  "USDT 支付服务当前不可用",
 		})
 		return
 	}
 
-	// 在实际应用中，这里应该查询数据库检查订单状态
-	// 为了简化演示，我们假设所有订单都是等待支付状态
-	// 在生产环境中，应该实现真正的订单状态检查逻辑
-	status := "waiting"
+	logrus.WithField("trade_id", tradeId).Info("检查 USDTMore 订单状态")
+	status, err := client.CheckOrderStatus(tradeId)
+	if err != nil {
+		logrus.WithError(err).Errorln("检查 USDTMore 订单状态失败")
+		c.JSON(http.StatusOK, gin.H{
+			"code": 500,
+			"msg":  "检查订单状态失败: " + err.Error(),
+		})
+		return
+	}
 
-	// 记录检查结果
 	logrus.WithFields(logrus.Fields{
 		"trade_id": tradeId,
 		"status":   status,
-	}).Debug("检查 USDTMore 订单状态")
+	}).Info("检查 USDTMore 订单状态结果")
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":   0,

@@ -54,11 +54,12 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 	logrus.WithField("data", data).Debug("创建 USDTMore 交易请求")
 
 	// 发送请求
-	url := c.config.APIEndpoint + "/api/v1/order/create-transaction"
+	url := c.config.APIEndpoint + "/api/order/create-transaction"
 	logrus.WithField("url", url).Debug("发送请求到 USDTMore API")
 
 	// 发送请求
 	resp, err := c.client.R().
+		SetHeader("Authorization", "Bearer "+c.config.AuthToken).
 		SetBody(data).
 		Post(url)
 
@@ -114,11 +115,13 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 // CheckOrderStatus 检查订单状态
 func (c *Client) CheckOrderStatus(tradeID string) (string, error) {
 	// 构建请求 URL
-	url := c.config.APIEndpoint + "/pay/check-status/" + tradeID
+	url := c.config.APIEndpoint + "/api/pay/check-status/" + tradeID
 	logrus.WithField("url", url).Debug("发送请求到 USDTMore API 检查订单状态")
 
 	// 发送请求
-	resp, err := c.client.R().Get(url)
+	resp, err := c.client.R().
+		SetHeader("Authorization", "Bearer "+c.config.AuthToken).
+		Get(url)
 
 	if err != nil {
 		logrus.WithError(err).Error("发送请求到 USDTMore API 检查订单状态失败")
