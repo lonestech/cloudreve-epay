@@ -117,8 +117,12 @@
             </div>
             
             <div class="payment-address">
-                <p class="mb-1 text-muted">USDT 收款地址（点击复制）</p>
-                <p class="mb-0 copy-btn" id="address" onclick="copyToClipboard('{{.Address}}')">{{.Address}}</p>
+                <p class="mb-1 text-muted">USDT 收款地址</p>
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control" id="address-input" value="{{.Address}}" readonly>
+                    <button class="btn btn-outline-secondary" type="button" id="copy-address-btn">复制</button>
+                </div>
+                <div id="copy-success" class="text-success small" style="display: none;">已复制到剪贴板！</div>
             </div>
             
             <div class="payment-timer">
@@ -133,13 +137,31 @@
     </div>
 
     <script>
-        // 复制到剪贴板
+        // 复制到剪贴板 - 兼容性更好的方法
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                alert('已复制到剪贴板');
-            }, function(err) {
-                console.error('无法复制: ', err);
-            });
+            // 创建一个临时输入框
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            
+            // 确保元素不可见
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px';
+            
+            // 添加到DOM，选中文本并复制
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999); // 兼容移动设备
+            
+            let successful = false;
+            try {
+                successful = document.execCommand('copy');
+            } catch (err) {
+                console.error('复制失败:', err);
+            }
+            
+            // 清理
+            document.body.removeChild(tempInput);
+            return successful;
         }
 
         // 检查支付状态
@@ -179,6 +201,22 @@
             // 点击检查按钮时立即检查
             document.getElementById('check-status-btn').addEventListener('click', function() {
                 checkPaymentStatus();
+            });
+            
+            // 设置复制按钮事件
+            document.getElementById('copy-address-btn').addEventListener('click', function() {
+                const addressInput = document.getElementById('address-input');
+                const copySuccess = document.getElementById('copy-success');
+                
+                // 复制地址
+                if (copyToClipboard(addressInput.value)) {
+                    // 显示成功消息
+                    copySuccess.style.display = 'block';
+                    // 3秒后隐藏成功消息
+                    setTimeout(function() {
+                        copySuccess.style.display = 'none';
+                    }, 3000);
+                }
             });
         });
     </script>
