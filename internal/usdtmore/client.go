@@ -54,12 +54,14 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 	logrus.WithField("data", data).Debug("创建 USDTMore 交易请求")
 
 	// 发送请求
-	url := c.config.APIEndpoint + "/api/v1/order/create-transaction"
+	// 根据独角数卡的实现，直接使用完整的 API 端点 URL
+	url := c.config.APIEndpoint
 	logrus.WithField("url", url).Debug("发送请求到 USDTMore API")
 
 	// 发送请求
+	// 根据独角数卡的实现，设置 Content-Type 为 application/json
 	resp, err := c.client.R().
-		SetHeader("Authorization", "Bearer "+c.config.AuthToken).
+		SetHeader("Content-Type", "application/json").
 		SetBody(data).
 		Post(url)
 
@@ -147,12 +149,15 @@ func (c *Client) CreateTransaction(orderID string, amount float64, notifyURL, re
 // CheckOrderStatus 检查订单状态
 func (c *Client) CheckOrderStatus(tradeID string) (string, error) {
 	// 构建请求 URL
-	url := c.config.APIEndpoint + "/api/pay/check-status/" + tradeID
+	// 根据独角数卡的实现，直接使用完整的 API 端点 URL
+	// 添加订单状态检查路径
+	url := c.config.APIEndpoint + "/check-status/" + tradeID
 	logrus.WithField("url", url).Debug("发送请求到 USDTMore API 检查订单状态")
 
 	// 发送请求
+	// 根据独角数卡的实现，设置 Content-Type 为 application/json
 	resp, err := c.client.R().
-		SetHeader("Authorization", "Bearer "+c.config.AuthToken).
+		SetHeader("Content-Type", "application/json").
 		Get(url)
 
 	if err != nil {
