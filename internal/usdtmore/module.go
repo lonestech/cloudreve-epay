@@ -9,22 +9,19 @@ import (
 // Module USDTMore 模块
 var Module = fx.Options(
 	fx.Provide(
-		fx.Annotate(
-			NewConfigFromEnv,
-			fx.ParamTags(`group:"config"`),
-		),
+		NewConfigFromEnv,
 		ProvideClient,
 	),
 )
 
 // NewConfigFromEnv 从环境变量创建配置
 func NewConfigFromEnv(conf *appconf.Config) *Config {
-	return &Config{
-		Enabled:      conf.USDTMoreEnabled,
-		APIEndpoint:  conf.USDTMoreAPIEndpoint,
-		AuthToken:    conf.USDTMoreAuthToken,
-		DefaultChain: conf.USDTMoreDefaultChain,
-	}
+	return NewConfig(
+		conf.USDTMoreEnabled,
+		conf.USDTMoreAPIEndpoint,
+		conf.USDTMoreAuthToken,
+		conf.USDTMoreDefaultChain,
+	)
 }
 
 // ProvideClient 提供 USDTMore 客户端
