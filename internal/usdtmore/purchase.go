@@ -44,6 +44,20 @@ func (c *Client) Purchase(args *PurchaseArgs) (*PurchaseResult, error) {
 		return nil, err
 	}
 
+	// 检查响应是否为空
+	if resp == nil {
+		logrus.Error("USDTMore API 响应为空")
+		return nil, fmt.Errorf("USDTMore API 响应为空")
+	}
+
+	// 记录响应信息
+	logrus.WithFields(logrus.Fields{
+		"PaymentURL": resp.PaymentURL,
+		"Token": resp.Token,
+		"ActualAmount": resp.ActualAmount,
+		"ExpirationTime": resp.ExpirationTime,
+	}).Info("USDTMore 交易创建成功")
+
 	// 返回购买结果
 	return &PurchaseResult{
 		PaymentURL:    resp.PaymentURL,
