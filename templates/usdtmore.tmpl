@@ -84,7 +84,7 @@
     <div class="container">
         <div class="payment-container">
             <div class="payment-header">
-                <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg" alt="USDT Logo" class="usdt-logo">
+                <img src="https://cdn.jsdelivr.net/gh/ErikThiart/cryptocurrency-icons/16/usdt.png" alt="USDT Logo" class="usdt-logo">
                 <h2>USDT 支付</h2>
                 <div class="status-badge status-waiting" id="status-badge">等待支付</div>
             </div>
@@ -109,8 +109,11 @@
             </div>
             
             <div class="payment-qr">
-                <img src="{{.QRCodeURL}}" alt="支付二维码" class="img-fluid" style="max-width: 200px;">
+                <div style="background-color: white; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 10px;">
+                    <img src="{{.QRCodeURL}}" alt="支付二维码" class="img-fluid" style="max-width: 200px;">
+                </div>
                 <p class="text-muted mt-2">使用 USDT 钱包扫描二维码支付</p>
+                <p class="text-muted small">扫码支付 {{.USDTAmount}} USDT 至地址 {{.Address}}</p>
             </div>
             
             <div class="payment-address">

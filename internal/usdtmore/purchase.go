@@ -75,7 +75,10 @@ func (r *PurchaseResult) FormatExpirationTime() string {
 
 // GetQRCodeURL 获取二维码 URL
 func (r *PurchaseResult) GetQRCodeURL() string {
-	// 构建 USDT 转账 URL
-	return fmt.Sprintf("https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=%s&choe=UTF-8", 
-		url.QueryEscape(fmt.Sprintf("tether:%s?amount=%s", r.Token, r.ActualAmount)))
+	// 构建 USDT 转账数据
+	tetherData := fmt.Sprintf("tether:%s?amount=%s", r.Token, r.ActualAmount)
+	
+	// 使用 QRServer API，这是一个更可靠的二维码生成服务
+	return fmt.Sprintf("https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s", 
+		url.QueryEscape(tetherData))
 }
