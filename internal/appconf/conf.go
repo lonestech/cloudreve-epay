@@ -24,4 +24,5 @@ type Config struct {
 	USDTMoreAPIEndpoint  string `default:"http://localhost:6080" split_words:"true"`
 	USDTMoreAuthToken    string `default:"123456" split_words:"true"`
 	USDTMoreDefaultChain string `default:"TRON" split_words:"true"`
+	USDTMoreOnly         bool   `default:"false" split_words:"true"` // 是否只启用USDT支付
 }

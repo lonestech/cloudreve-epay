@@ -23,11 +23,13 @@ services:
       - CR_EPAY_REDIS_DB=0
       - CR_EPAY_AUTO_SUBMIT=true
       # USDTMore 配置
-      - CR_EPAY_USDT_MORE_ENABLED=true
+      - CR_EPAY_USDTMORE_ENABLED=true
       # 根据独角数卡的实现，完整的 API 端点应该是基础 URL
-      - CR_EPAY_USDT_MORE_API_ENDPOINT=https://us.wkk.su
-      - CR_EPAY_USDT_MORE_AUTH_TOKEN=jWSJrZs5eT11TpWCEyAc78jAwxh9ReA8
-      - CR_EPAY_USDT_MORE_DEFAULT_CHAIN=TRON
+      - CR_EPAY_USDTMORE_API_ENDPOINT=https://us.wkk.su
+      - CR_EPAY_USDTMORE_AUTH_TOKEN=jWSJrZs5eT11TpWCEyAc78jAwxh9ReA8
+      - CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON
+      # 是否只启用USDT支付（如果为true，将只显示USDT支付选项）
+      - CR_EPAY_USDTMORE_ONLY=true
     depends_on:
       - redis
     restart: unless-stopped

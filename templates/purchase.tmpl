@@ -99,6 +99,7 @@
         <h1>订单支付</h1>
         
         <div class="payment-buttons">
+            {{if .EpayEnabled}}
             <form id='purchase' name='purchase' action='{{.Endpoint}}' method='POST' style="margin-bottom: 10px;">
                 {{range $key,$value := .Params}}
                     <input type='hidden' name='{{$key}}' value='{{$value}}' />
@@ -110,6 +111,7 @@
                     支付宝/微信支付
                 </button>
             </form>
+            {{end}}
             
             <!-- USDT 支付选项 -->
             {{if .USDTMoreEnabled}}

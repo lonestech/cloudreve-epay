@@ -8,13 +8,14 @@
 
 - ✅ 完整支持 Cloudreve Pro 自定义支付接口规范
 - ✅ 支持订单创建、支付通知和订单状态查询
-- ✅ 支持多种支付方式（支付宝、微信支付、USDT 等）
+- ✅ 支持多种支付方式（支付宝、微信支付、USDT ）
+- ✅ 支持仅启用 USDT 支付模式
 - ✅ 安全的 HMAC 签名验证机制
 - ✅ 支持 Redis 缓存，确保支付状态可靠存储
 - ✅ 自定义订单名称
 - ✅ 支持模板导出，避免 XSS 风险
 - ✅ 支持 Cloudreve V4 回调格式
-- ✅ 支持 USDT 多链支付（TRC20、ERC20、Polygon、BSC 等）
+- ✅ 支持 USDT 多链支付（TRC20、ERC20、Polygon、BSC ）
 
 ## 系统要求
 
@@ -134,6 +135,8 @@ CR_EPAY_USDTMORE_ENABLED=false
 CR_EPAY_USDTMORE_API_ENDPOINT=http://localhost:6080
 CR_EPAY_USDTMORE_AUTH_TOKEN=your_auth_token
 CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON  # 可选值：TRON, POLY, OP, BSC
+# 是否只启用USDT支付（如果为true，将只显示USDT支付选项）
+CR_EPAY_USDTMORE_ONLY=false
 ```
 
 #### Docker 部署方式（docker-compose.yml）
@@ -161,7 +164,8 @@ environment:
   - CR_EPAY_USDTMORE_ENABLED=false
   - CR_EPAY_USDTMORE_API_ENDPOINT=http://usdtmore:6080
   - CR_EPAY_USDTMORE_AUTH_TOKEN=your_auth_token
-  - CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON
+  # 是否只启用USDT支付（如果为true，将只显示USDT支付选项）
+  - CR_EPAY_USDTMORE_ONLY=false  - CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON
 ```
 
 注意：使用 Docker 部署时，不需要创建 `.env` 文件，所有配置都在 `docker-compose.yml` 文件中定义。
@@ -197,7 +201,11 @@ environment:
 2. **配置 Telegram 机器人**：
    - USDTMore 依赖 Telegram 机器人进行通知和管理
    - 设置 `TG_BOT_TOKEN` 和 `TG_BOT_ADMIN_ID`
-   - 详细配置请参考 USDTMore 文档
+
+3. **仅启用 USDT 支付模式**：
+   - 如果您只想提供 USDT 支付选项，可以设置 `CR_EPAY_USDTMORE_ONLY=true`
+   - 此配置将使系统只显示 USDT 支付选项，隐藏支付宝/微信支付选项
+   - 用户访问支付页面时将直接跳转到 USDT 支付界面   - 详细配置请参考 USDTMore 文档
 
 3. **添加钱包地址**：
    - 通过 Telegram 机器人添加 USDT 收款地址

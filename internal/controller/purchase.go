@@ -113,6 +113,17 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 		return
 	}
 
+	// 检查是否只启用了USDT支付
+	usdtMoreEnabled := pc.Conf.USDTMoreEnabled && pc.USDTMoreClient != nil
+	epayEnabled := !pc.Conf.USDTMoreOnly
+
+	// 如果只启用了USDT支付，直接重定向到USDT支付页面
+	if usdtMoreEnabled && !epayEnabled {
+		logrus.Info("只启用了USDT支付，直接重定向到USDT支付页面")
+		c.Redirect(http.StatusFound, "/purchase/usdtmore/"+orderId)
+		return
+	}
+
 	amount := decimal.NewFromInt(int64(order.Amount)).Div(decimal.NewFromInt(100)).StringFixedBank(2)
 
 	args := &epay.PurchaseArgs{
@@ -139,7 +150,9 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 
 	// 添加调试日志
 	logrus.WithFields(logrus.Fields{
-		"USDTMoreEnabled": pc.Conf.USDTMoreEnabled,
+		"USDTMoreEnabled": usdtMoreEnabled,
+		"EpayEnabled": epayEnabled,
+		"USDTMoreOnly": pc.Conf.USDTMoreOnly,
 		"USDTMoreClient": pc.USDTMoreClient != nil,
 		"USDTMoreAPIEndpoint": pc.Conf.USDTMoreAPIEndpoint,
 	}).Info("支付页面配置信息")
@@ -148,7 +161,8 @@ func (pc *CloudrevePayController) PurchasePage(c *gin.Context) {
 		"Endpoint": endpoint,
 		"Params":   purchaseParams,
 		"OrderId":  order.OrderNo,
-		"USDTMoreEnabled": pc.Conf.USDTMoreEnabled && pc.USDTMoreClient != nil,
-		"AutoSubmit": pc.Conf.AutoSubmit,
+		"USDTMoreEnabled": usdtMoreEnabled,
+		"EpayEnabled": epayEnabled,
+		"AutoSubmit": pc.Conf.AutoSubmit && epayEnabled,
 	})
 }
