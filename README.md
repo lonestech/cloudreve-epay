@@ -161,11 +161,12 @@ environment:
   - CR_EPAY_REDIS_DB=0
   - CR_EPAY_AUTO_SUBMIT=true
   # USDTMore 配置（可选，用于支持 USDT 支付）
-  - CR_EPAY_USDTMORE_ENABLED=false
-  - CR_EPAY_USDTMORE_API_ENDPOINT=http://usdtmore:6080
-  - CR_EPAY_USDTMORE_AUTH_TOKEN=your_auth_token
+  - CR_EPAY_USDT_MORE_ENABLED=false
+  - CR_EPAY_USDT_MORE_API_ENDPOINT=http://usdtmore:6080
+  - CR_EPAY_USDT_MORE_AUTH_TOKEN=your_auth_token
   # 是否只启用USDT支付（如果为true，将只显示USDT支付选项）
-  - CR_EPAY_USDTMORE_ONLY=false  - CR_EPAY_USDTMORE_DEFAULT_CHAIN=TRON
+  - CR_EPAY_USDT_MORE_ONLY=false  
+  - CR_EPAY_USDT_MORE_DEFAULT_CHAIN=TRON
 ```
 
 注意：使用 Docker 部署时，不需要创建 `.env` 文件，所有配置都在 `docker-compose.yml` 文件中定义。
